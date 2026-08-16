@@ -75,3 +75,59 @@ def test_all_example_slides_compile(tmp_path: Path) -> None:
     out = compile_deck(envelope, tmp_path / "layouts.pptx")
     reopened = Presentation(str(out))
     assert len(reopened.slides) == len(LAYOUTS)
+
+
+def test_image_left_text_right_places_real_image(tmp_path: Path) -> None:
+    """The image layout embeds the referenced picture (real-file path)."""
+    from PIL import Image
+
+    image = tmp_path / "shot.png"
+    Image.new("RGB", (320, 180), (77, 157, 224)).save(image)
+    envelope = DeckEnvelope(
+        schema_version="office-ir/1.0",
+        kind="presentation",
+        document_id="draft:image",
+        metadata=Metadata(title="image"),
+        document=PresentationIr(
+            slides=(
+                Slide(
+                    semantic_layout="image_left_text_right",
+                    title="Shot 010",
+                    content_blocks=(
+                        {"type": "image", "resource": str(image)},
+                        {"type": "bullets", "items": ["版本: v12", "制作: li.ming"]},
+                    ),
+                ),
+            )
+        ),
+    )
+    out = compile_deck(envelope, tmp_path / "image.pptx")
+    slide = Presentation(str(out)).slides[0]
+    pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 1
+
+
+def test_image_layout_skips_missing_resource(tmp_path: Path) -> None:
+    """A missing image degrades to a bullets note, never a broken picture."""
+    envelope = DeckEnvelope(
+        schema_version="office-ir/1.0",
+        kind="presentation",
+        document_id="draft:image",
+        metadata=Metadata(title="image"),
+        document=PresentationIr(
+            slides=(
+                Slide(
+                    semantic_layout="image_left_text_right",
+                    title="Shot 010",
+                    content_blocks=(
+                        {"type": "image", "resource": str(tmp_path / "nope.png")},
+                        {"type": "bullets", "items": ["missing_asset: 渲染产物缺失"]},
+                    ),
+                ),
+            )
+        ),
+    )
+    out = compile_deck(envelope, tmp_path / "image.pptx")
+    slide = Presentation(str(out)).slides[0]
+    pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert pictures == []

@@ -1,0 +1,22 @@
+{
+  "title": "DCC-MCP Framework Review — Demo",
+  "document_id": "draft:review-dcc-mcp-framework",
+  "shots": [
+    {
+      "name": "deck_architecture",
+      "version": "v1",
+      "artist": "dcc-mcp-office",
+      "date": "2026-08-16",
+      "image": "examples/output/previews/slide-04.png",
+      "notes": "总体架构页 —— 五层结构：客户端 / Rust 网关 / Sidecar / 适配器 / DCC 应用。"
+    },
+    {
+      "name": "deck_kpi",
+      "version": "v1",
+      "artist": "dcc-mcp-office",
+      "date": "2026-08-16",
+      "image": "examples/output/previews/slide-06.png",
+      "notes": "生态现状 KPI —— 30+ 适配器、198 个 Maya 操作、25+ 域技能包。"
+    }
+  ]
+}
