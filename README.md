@@ -38,6 +38,21 @@ Agent → dcc-mcp-gateway (Rust, dcc-mcp-core)
   from Maya/Houdini/Blender/Unreal renders + shot/asset metadata
   (proposal §15.7).
 
+## Agent usage (via dcc-mcp-cli / gateway)
+
+1. Register the skill packs with the gateway:
+   `set DCC_MCP_POWERPOINT_SKILL_PATHS=<repo>\src\dcc_mcp_powerpoint\skills`
+2. Run a skill script directly (gateway `execute_script` contract —
+   stdin JSON or CLI flags):
+   ```bash
+   python src/dcc_mcp_powerpoint/skills/powerpoint-deck/scripts/generate_deck.py \
+     --input examples/dcc_mcp_framework_intro.json --out out
+   ```
+3. Validate the packs with the official linter:
+   ```bash
+   dcc-mcp-cli lint src/dcc_mcp_powerpoint/skills --warnings-as-errors --non-interactive
+   ```
+
 ## Development
 
 ```bash
