@@ -43,18 +43,43 @@ Deck generation through the designed pipeline (proposal §15.3/§15.4):
 - `output_dir` — artifact directory
 - `render` / `previews` — whether to run the COM render step
 
+## Decision rules (document-pptx learnings)
+
+- start from the audience and the decision the deck must support; one
+  takeaway per slide
+- brand fidelity matters → use the brand:// template registry, never guess
+  brand colors or fonts (the official lockup resolves from the registry)
+- narrative before code: build the slide outline, then the Deck IR, then
+  compile — never author slide coordinates first
+- resolve layouts by name (semantic_layout), never by guessed index
+
 ## Scripts
 
 - `generate_deck` — IR → PPTX (+ PDF/previews + validation report)
 - `validate_deck` — validate a Deck IR / artifacts without generating
 - `render_deck` — render an existing PPTX to PDF + previews via COM
+- `inventory_deck` — read-only PPTX inventory (notes coverage, alt-text
+  gaps, shape counts) before editing or repair
 
 ## Validation rules
 
 - envelope contract enforced at load (`deck_ir`): unknown layouts, missing
   keys and bad types are hard errors with a json-path hint
 - structural checks: schema version, slide count, titles, bullet budgets
+- every picture carries alt text (accessibility is authoring, not
+  afterthought); `inventory_deck` reports gaps
 - artifacts must exist and be non-empty
+
+## Known limits
+
+- python-pptx has no animation/transition API and no gradient-fill API;
+  both need direct OOXML edits — never promise motion without it
+- no true combo charts (column + line) from scratch; style single-type
+  charts or finish in PowerPoint
+- image formats are limited to BMP/GIF/JPEG/PNG/TIFF/WMF — webp assets must
+  be converted before embedding
+- generated decks still need a real PowerPoint review when fidelity or
+  accessibility matters
 
 ## Agent-visible summary
 

@@ -38,7 +38,7 @@ def _valid_envelope() -> dict:
 def test_example_envelope_loads() -> None:
     env = load_deck_ir(EXAMPLES / "dcc_mcp_framework_intro.json")
     assert env.kind == "presentation"
-    assert len(env.document.slides) == 12
+    assert len(env.document.slides) == 14
     assert env.document.slides[0].semantic_layout == "title_cover"
     assert env.metadata.title == "DCC-MCP 框架介绍"
 

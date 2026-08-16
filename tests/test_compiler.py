@@ -13,6 +13,7 @@ from dcc_mcp_powerpoint.deck_ir import (
     DeckEnvelope,
     Metadata,
     PresentationIr,
+    Resource,
     Slide,
     load_deck_ir,
 )
@@ -131,3 +132,64 @@ def test_image_layout_skips_missing_resource(tmp_path: Path) -> None:
     slide = Presentation(str(out)).slides[0]
     pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
     assert pictures == []
+
+
+def test_image_grid_places_cards_with_captions_and_alt_text(tmp_path: Path) -> None:
+    """image_grid renders every Resource as a captioned card with alt text."""
+    from PIL import Image
+    from pptx.oxml.ns import qn
+
+    images = []
+    for i in range(4):
+        path = tmp_path / f"img{i}.png"
+        Image.new("RGBA", (320, 180), (77, 157, 224, 255)).save(path)
+        images.append(Resource(id=f"案例 {i}", uri=str(path)))
+    envelope = DeckEnvelope(
+        schema_version="office-ir/1.0",
+        kind="presentation",
+        document_id="draft:grid",
+        metadata=Metadata(title="grid"),
+        document=PresentationIr(
+            slides=(Slide(semantic_layout="image_grid", title="真实案例", images=tuple(images)),)
+        ),
+    )
+    out = compile_deck(envelope, tmp_path / "grid.pptx")
+    slide = Presentation(str(out)).slides[0]
+    pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 4
+    for pic in pictures:
+        c_nv_pr = pic._element.nvPicPr.find(qn("p:cNvPr"))
+        assert c_nv_pr is not None and c_nv_pr.get("descr"), "picture missing alt text"
+    texts = []
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            texts.append(shape.text_frame.text)
+    assert "案例 0" in texts and "案例 3" in texts
+
+
+def test_image_grid_degrades_missing_assets(tmp_path: Path) -> None:
+    """A missing asset renders an explicit note, never a broken picture."""
+    envelope = DeckEnvelope(
+        schema_version="office-ir/1.0",
+        kind="presentation",
+        document_id="draft:grid",
+        metadata=Metadata(title="grid"),
+        document=PresentationIr(
+            slides=(
+                Slide(
+                    semantic_layout="image_grid",
+                    title="真实案例",
+                    images=(Resource(id="缺失", uri=str(tmp_path / "nope.png")),),
+                ),
+            )
+        ),
+    )
+    out = compile_deck(envelope, tmp_path / "grid.pptx")
+    slide = Presentation(str(out)).slides[0]
+    pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert pictures == []
+    texts = []
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            texts.append(shape.text_frame.text)
+    assert any("missing_asset" in t for t in texts)

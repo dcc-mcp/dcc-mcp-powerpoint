@@ -51,10 +51,13 @@ def render_deck(pptx_path: str | Path, out_dir: str | Path, *, pdf: bool = True,
     Returns a result context: backend, pdf path, preview paths, office
     version — or an explicit unavailable reason. Never degrades silently.
     """
-    pptx = Path(pptx_path)
+    # COM runs in PowerPoint's process: relative paths would resolve against
+    # PowerPoint's working directory (usually System32), not ours — always
+    # hand absolute paths to the COM surface (0x80070003 lesson).
+    pptx = Path(pptx_path).resolve()
     if not pptx.is_file():
         return {"success": False, "backend": None, "reason": f"input not found: {pptx}"}
-    out = Path(out_dir)
+    out = Path(out_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
 
     if not office_available():
