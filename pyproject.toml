@@ -42,7 +42,7 @@ sidecar = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/loonghao/dcc-mcp-PowerPoint"
+Homepage = "https://github.com/dcc-mcp/dcc-mcp-PowerPoint"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dcc_mcp_powerpoint"]

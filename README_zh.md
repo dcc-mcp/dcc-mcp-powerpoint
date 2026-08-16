@@ -1,7 +1,7 @@
 # dcc-mcp-PowerPoint
 
 DCC-MCP 生态的 PowerPoint 适配器 —— 作为
-[dcc-mcp-office](https://github.com/loonghao/dcc-mcp-office) 之上的
+[dcc-mcp-office](https://github.com/dcc-mcp/dcc-mcp-office) 之上的
 **应用适配层**：从结构化内容生成 Deck、Slide 编排、DCC 渲染产物评审 Deck、
 批量转 PDF、批量替换文字、逐页预览与视觉校验。
 

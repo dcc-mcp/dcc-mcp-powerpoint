@@ -1,7 +1,7 @@
 # dcc-mcp-PowerPoint
 
 PowerPoint adapter for the DCC-MCP ecosystem — the **application layer** over
-[dcc-mcp-office](https://github.com/loonghao/dcc-mcp-office): deck generation
+[dcc-mcp-office](https://github.com/dcc-mcp/dcc-mcp-office): deck generation
 from structured content, slide composition, review decks from DCC renders,
 batch PDF conversion and text replacement (via the shared core), previews and
 visual validation.
