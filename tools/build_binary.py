@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -31,7 +30,15 @@ def publish_host(host_source: Path) -> None:
         raise SystemExit(f"host project not found: {project} (pass --host-source)")
     VENDOR_HOST.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
-        ["dotnet", "publish", str(project), "-c", "Release", "-r", "win-x64", "--self-contained", "-o", str(VENDOR_HOST.parent)],
+        [
+            "dotnet", "publish", str(project),
+            "-c", "Release", "-r", "win-x64", "--self-contained",
+            # Single-file host: FileManifest.add_path bundles exactly one
+            # binary — no apphost/dll siblings to lose.
+            "-p:PublishSingleFile=true",
+            "-p:IncludeNativeLibrariesForSelfExtract=true",
+            "-o", str(VENDOR_HOST.parent),
+        ],
         check=True,
     )
     print(f"host published: {VENDOR_HOST}")
@@ -43,7 +50,19 @@ def build(host_source: Path | None) -> None:
     if not VENDOR_HOST.is_file():
         raise SystemExit(f"host binary missing: {VENDOR_HOST} — run with --host-source")
     subprocess.run(["pyoxidizer", "build", "install"], cwd=str(ROOT), check=True)
-    print("standalone build complete: dist/binary/dcc-mcp-powerpoint.exe")
+    exe_path = next(ROOT.glob("build/**/dcc-mcp-powerpoint.exe"), None)
+    if exe_path is None:
+        raise SystemExit("pyoxidizer completed but the exe was not found under build/")
+    install_dir = exe_path.parent
+    dist_dir = ROOT / "dist/binary"
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    for entry in install_dir.iterdir():
+        target = dist_dir / entry.name
+        if entry.is_dir():
+            shutil.copytree(entry, target, dirs_exist_ok=True)
+        else:
+            shutil.copy2(entry, target)
+    print(f"standalone build complete: {dist_dir / 'dcc-mcp-powerpoint.exe'}")
 
 
 def main() -> None:
