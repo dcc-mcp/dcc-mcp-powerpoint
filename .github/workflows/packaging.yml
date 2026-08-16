@@ -26,10 +26,16 @@ jobs:
           dotnet-version: "8.0.x"
       - uses: dtolnay/rust-toolchain@stable
 
+      # Pinned host-source ref: the dependency build (dcc-office-host) is
+      # produced by dcc-mcp-office's Publish Host workflow; we build it here
+      # from the pinned source so packaging stays reproducible. Bump this ref
+      # when the office dependency changes; switch to downloading the
+      # published artifact once dcc-mcp-office cuts releases.
       - name: Checkout dcc-mcp-office (host source)
         uses: actions/checkout@v4
         with:
           repository: dcc-mcp/dcc-mcp-office
+          ref: 26b0968282c08d9cae4ca84f26b7ad62f1bfdc72
           path: _office
 
       - name: Install PyOxidizer
