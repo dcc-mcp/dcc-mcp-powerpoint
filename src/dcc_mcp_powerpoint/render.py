@@ -61,6 +61,9 @@ def render_deck(pptx_path: str | Path, out_dir: str | Path, *, pdf: bool = True,
     out.mkdir(parents=True, exist_ok=True)
 
     if not office_available():
+        # Self-implemented HTML-engine preview backend is roadmap (see
+        # learnings.md — OfficeCLI research, 2026-08-16). Until then, no
+        # Office means an explicit unavailable reason, never a fake artifact.
         return {
             "success": False,
             "backend": None,
