@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dcc-mcp/dcc-mcp-office
-          ref: b66c691eb1f58263c2f585c43409e2a7ff459f85
+          ref: c5d6694330e3b795af3eb9d03c44930b93f011ca
           path: _office
 
       - name: Install PyOxidizer
