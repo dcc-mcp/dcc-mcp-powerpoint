@@ -48,3 +48,17 @@ history).
   2. issues 分析器：路径寻址 + format/content/structure 分类 + 具体修复提示
   3. inventory 输出采用 `/slide[i]/shape[j]` 路径寻址
   4. 低对比度（low_contrast）检查并入视觉 QA
+
+## 2026-08-16 — 依赖边界：自研 + 自有 C# 宿主
+
+决策：dcc-mcp-PowerPoint 运行时零第三方依赖；重型能力（Open XML 读写、
+COM 渲染）由我们自己的 dcc-mcp-office C# 宿主提供，Python 走 office-rpc
+契约调用（先 stdin/stdout JSON-RPC，后按方案 §12 换命名管道）。
+
+- Python 运行时只用 stdlib（zipfile/xml.etree/json/dataclasses/subprocess/ctypes）
+- python-pptx/Pillow/pywin32 降级为 dev/test 专用（测试 oracle、夹具）
+- analyze/inventory 的 pptx 读取层迁移到 C# 宿主（当前例外，已记录）
+- C# 宿主零非微软 NuGet：System.IO.Packaging + LINQ to XML（net8.0-windows
+  内置）+ BCL COM 互操作
+- 第三方资产（模板/字体/素材）仅经许可核验 + 自托管后入库，构建/运行时
+  不从外部源拉取

@@ -44,6 +44,24 @@ tools:
         type: string
         description: Path to the Deck IR JSON file, or a directory of artifacts
     required: [input]
+- name: analyze_deck
+  execution: sync
+  affinity: main
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    Analyze a PPTX for issues with path addressing (/slide[i]/shape[j]) and
+    concrete fix hints: structure (text overflow via real font metrics,
+    slide-bounds), format (brand fonts, WCAG contrast), content (alt text,
+    speaker notes). Read-only; undecidable checks are skipped, never guessed.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+    required: [input]
 - name: inventory_deck
   execution: sync
   affinity: main
