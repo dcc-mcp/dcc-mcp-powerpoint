@@ -346,7 +346,11 @@ def _apply_operation(prs, index: int, op: dict[str, Any], deck_title: str) -> di
             return {"index": index, "op": name, "ok": True, "affected": result["tagged"], "detail": result["shapes"]}
 
         raise PatchApplyError(index, f"unhandled operation {name!r}")
-    except PatchApplyError:
+    except PatchApplyError as exc:
+        if exc.operation_index < 0:
+            # -1 is the sentinel used by selector/slide validation helpers;
+            # the patch contract reports the real failing operation index.
+            raise PatchApplyError(index, exc.message) from exc
         raise
     except Exception as exc:  # wrap as a structured per-op error
         raise PatchApplyError(index, str(exc)) from exc
