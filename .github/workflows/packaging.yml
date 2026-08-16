@@ -41,11 +41,13 @@ jobs:
       - name: Smoke test — version + compile via bundled host
         shell: pwsh
         run: |
-          cd dist/binary
-          .dcc-mcp-powerpoint.exe --version
-          .dcc-mcp-powerpoint.exe compile --input ....examplesdcc_mcp_framework_intro.json --output "$env:RUNNER_TEMPsmoke.pptx"
+          Get-ChildItem dist/binary | Select-Object -First 5 Name, Length
+          $exe = Join-Path $env:GITHUB_WORKSPACE "dist/binary/dcc-mcp-powerpoint.exe"
+          if (-not (Test-Path $exe)) { Write-Error "standalone exe missing: $exe"; exit 1 }
+          & $exe --version
+          & $exe compile --input examples/dcc_mcp_framework_intro.json --output "$env:RUNNER_TEMPsmoke.pptx"
           if (-not (Test-Path "$env:RUNNER_TEMPsmoke.pptx")) { Write-Error "compile produced no output"; exit 1 }
-          .dcc-mcp-powerpoint.exe inspect --input "$env:RUNNER_TEMPsmoke.pptx"
+          & $exe inspect --input "$env:RUNNER_TEMPsmoke.pptx"
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v4
