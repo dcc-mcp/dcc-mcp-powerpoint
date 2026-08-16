@@ -1,58 +1,50 @@
 ---
 name: powerpoint-review
-description: "dcc.review-deck-from-renders — build a production review deck from DCC renders (Maya/Houdini/Blender/Unreal) + shot/asset metadata: title page, shot/asset grouping, version comparisons, notes pages, PDF + per-page previews, backlinks to source assets."
-dcc: powerpoint
-version: "0.1.0"
-license: "MIT"
-compatibility: "Windows, Office 2019+ / Microsoft 365; inputs from any DCC-MCP render pipeline"
-tags: ["powerpoint", "review", "dcc", "render", "deck"]
-capabilities:
-  - powerpoint.deck.generate
-  - powerpoint.slide.compose
-  - office.batch.convert
+description: >-
+  Build a production review deck from DCC renders (Maya/Houdini/Blender/Unreal)
+  plus shot/asset metadata: title page, shot list, per-shot slides with
+  version/artist/date and notes, PDF + per-page previews, and backlinks to the
+  source assets. Use for dailies and asset review decks.
+license: MIT
+allowed-tools: Bash Read
+metadata:
+  dcc-mcp:
+    dcc: powerpoint
+    layer: domain
+    stage: review
+    version: 0.1.0
+    tags:
+      - powerpoint
+      - review
+      - dcc
+      - render
+      - deck
+    search-hint: >-
+      review deck, dailies deck, shot review, asset review, render comparison,
+      review-deck-from-renders
+    tools: tools.yaml
 ---
 
-# powerpoint-review (dcc.review-deck-from-renders)
+# powerpoint-review (Review stage)
 
-Production review decks straight from DCC pipelines (proposal §15.7).
+`dcc.review-deck-from-renders` (proposal §15.7): production review decks
+straight from DCC pipelines. Deck assembly reuses the `powerpoint-deck`
+pipeline (Deck IR → Open XML compile → COM render → validation).
 
 ## Input contract
 
-- renders: images/videos from Maya/Houdini/Blender/Unreal
-- shot/asset metadata: names, versions, artists, dates, performance data
-- review notes (optional)
+- `input` — path to a shots manifest JSON:
+  `{"title": ..., "shots": [{"name", "version", "artist", "date", "image", "notes"}]}`
 
-## Planning steps
+## Scripts
 
-1. Group by shot/asset; pair old vs new versions for comparisons.
-2. Map groups to semantic layouts (full_bleed_image, comparison,
-   kpi_dashboard for performance data).
-3. Compose Deck IR with backlinks to source assets.
-4. Generate via `powerpoint.deck.generate`; export PDF + per-page previews.
-
-## Provider choice
-
-Desktop COM for final render/export; Open XML for base construction.
-
-## Safety confirmation
-
-Read-only review generation → no confirmation; publishing to shared
-locations → confirm.
+- `review_deck_from_renders` — manifest → Deck IR → PPTX (+ PDF/previews)
 
 ## Validation rules
 
-Every slide must carry version info; comparisons must show both versions;
-previews must be checked for overflow before delivery.
-
-## Failure compensation
-
-Missing renders → placeholder slide with an explicit `missing_asset` note in
-the report; never silently drop a shot from the review.
-
-## Artifact naming
-
-`review-<project>-<date>-v<n>.{pptx,pdf}` + per-page PNGs; artifact records
-carry `source_document_id` backlinks to the DCC assets.
+- every shot becomes a slide; a missing render gets a `missing_asset` note,
+  never a silently dropped shot
+- artifacts must exist and be non-empty
 
 ## Agent-visible summary
 

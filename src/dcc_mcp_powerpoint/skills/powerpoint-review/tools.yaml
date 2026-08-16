@@ -1,0 +1,24 @@
+tools:
+- name: review_deck_from_renders
+  execution: sync
+  affinity: main
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Build a production review deck from a shots manifest (DCC renders +
+    shot/asset metadata). Assemblies a Deck IR and runs the
+    powerpoint-deck pipeline: PPTX + PDF + per-slide previews + validation.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the shots manifest JSON
+      output_dir:
+        type: string
+        description: Directory for pptx/pdf/preview artifacts
+      render:
+        type: boolean
+        description: Run the COM render step when Office is available
+        default: true
+    required: [input, output_dir]

@@ -6,9 +6,12 @@ from structured content, slide composition, review decks from DCC renders,
 batch PDF conversion and text replacement (via the shared core), previews and
 visual validation.
 
-**Status:** M0 scaffold. Protocol/IR and the C# `office-host` skeleton are
-landing in `dcc-mcp-office`; this repo wires the PowerPoint application
-semantics on top once M1 (COM MVP) ships there.
+**Status:** M1 capability live. The designed pipeline runs end-to-end:
+Deck IR (`office-ir/1.0`) → Open XML compile (python-pptx) → desktop COM
+render (PowerPoint `DispatchEx`, dedicated instance) → PDF + per-slide PNG
+previews → structural validation. Skill scripts are executable through the
+dcc-mcp gateway (`DCC_MCP_POWERPOINT_SKILL_PATHS`). The shared C# host in
+`dcc-mcp-office` remains the production COM path (M1 there).
 
 ## Design (two-layer sidecar)
 
