@@ -48,7 +48,11 @@ No COM wiring yet (that lands in dcc-mcp-office M1).
 ```bash
 pip install -e .[dev]
 pytest
+ruff check src tests
 ```
+
+Engineering agreement: [CONTRIBUTING.md](./CONTRIBUTING.md) (plus the shared
+rules in `dcc-mcp-office/CONTRIBUTING.md`).
 
 Golden files / visual snapshots for PowerPoint live in
 `dcc-mcp-office/tests/` (shared matrix); this repo adds PowerPoint-specific
