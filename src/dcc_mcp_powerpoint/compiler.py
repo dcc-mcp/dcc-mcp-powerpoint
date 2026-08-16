@@ -335,7 +335,7 @@ def _image_left_text_right(c: DeckCompiler, slide, ir: Slide) -> None:
         c._content_header(slide, ir.title)
     image = next((b for b in ir.content_blocks if b["type"] == "image"), None)
     if image and Path(image.get("resource", "")).is_file():
-        c._add_picture(slide, image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7), alt=str(image.get("resource", "")))
+        c._add_picture(slide, image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7), alt=ir.title or "slide image")
     texts = [b for b in ir.content_blocks if b["type"] == "bullets"]
     if texts:
         panel = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.05), Inches(BODY_TOP), Inches(CONTENT_WIDTH - 6.2), Inches(4.7), fill=COLOR_PANEL, radius=0.05)
