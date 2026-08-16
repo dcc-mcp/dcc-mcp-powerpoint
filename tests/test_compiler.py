@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from dcc_mcp_powerpoint.compiler import LAYOUTS, compile_deck
 from dcc_mcp_powerpoint.deck_ir import (
@@ -36,6 +37,9 @@ def test_compile_example_deck(tmp_path: Path) -> None:
     first = reopened.slides[0]
     assert first.has_notes_slide
     assert "开场" in first.notes_slide.notes_text_frame.text
+    # Title cover carries the packaged master logo (brand://dcc-mcp/*).
+    pictures = [s for s in first.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 1
 
 
 def test_compile_rejects_unknown_layout(tmp_path: Path) -> None:

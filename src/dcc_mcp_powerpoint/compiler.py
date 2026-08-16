@@ -8,6 +8,7 @@ final layout fidelity, PDF and previews come from the COM renderer.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from pptx.enum.text import PP_ALIGN
 from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
+from .brand import resolve_logo
 from .deck_ir import DeckEnvelope, Slide
 
 SLIDE_WIDTH = Inches(13.333)
@@ -155,6 +157,11 @@ class DeckCompiler:
 
 def _title_cover(c: DeckCompiler, slide, ir: Slide) -> None:
     c._background(slide, COLOR_BG)
+    # Official master logo, resolved from the brand registry — never a
+    # look-alike; unknown brands simply render without a logo.
+    logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
+    if logo is not None:
+        slide.shapes.add_picture(str(logo), Inches(0.9), Inches(0.45), height=Inches(0.55))
     c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(0.9), Inches(2.6), Inches(2.2), Pt(4)).fill.fore_color.rgb = COLOR_ACCENT
     c._add_textbox(slide, Inches(0.9), Inches(2.75), Inches(11.5), Inches(1.6), ir.title or c.envelope.metadata.title, size=54, bold=True)
     subtitle = next((b for b in ir.content_blocks if b["type"] == "text"), None)
@@ -164,10 +171,21 @@ def _title_cover(c: DeckCompiler, slide, ir: Slide) -> None:
     c._add_textbox(slide, Inches(0.9), Inches(6.7), Inches(11.0), Inches(0.4), f"{c.envelope.metadata.title} · {c.envelope.document_id}", size=12, color=COLOR_MUTED)
 
 
+# Ghost number on section covers: one step lighter than the background.
+COLOR_GHOST = RGBColor(0x22, 0x30, 0x47)
+
+
 def _section_cover(c: DeckCompiler, slide, ir: Slide) -> None:
     c._background(slide, COLOR_BG_SOFT)
+    title = ir.title or ""
+    number = ""
+    match = re.match(r"(\d+)\s*[·.:]\s*(.*)", title)
+    if match:
+        number, title = match.group(1), match.group(2)
+    if number:
+        c._add_textbox(slide, Inches(0.7), Inches(0.6), Inches(5.0), Inches(4.2), number, size=200, color=COLOR_GHOST, bold=True)
     c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(0.9), Inches(3.15), Inches(0.18), Inches(1.2)).fill.fore_color.rgb = COLOR_ACCENT_2
-    c._add_textbox(slide, Inches(1.3), Inches(3.1), Inches(11.0), Inches(1.4), ir.title or "", size=44, bold=True)
+    c._add_textbox(slide, Inches(1.3), Inches(3.1), Inches(11.0), Inches(1.4), title, size=44, bold=True)
 
 
 def _bullets(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -272,7 +290,10 @@ def _image_left_text_right(c: DeckCompiler, slide, ir: Slide) -> None:
 
 def _closing(c: DeckCompiler, slide, ir: Slide) -> None:
     c._background(slide, COLOR_BG)
-    c._add_textbox(slide, Inches(1.5), Inches(2.8), Inches(10.3), Inches(1.5), ir.title or "Thanks", size=48, bold=True, align=PP_ALIGN.CENTER)
+    logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
+    if logo is not None:
+        slide.shapes.add_picture(str(logo), Inches(5.92), Inches(1.5), height=Inches(0.9))
+    c._add_textbox(slide, Inches(1.5), Inches(2.7), Inches(10.3), Inches(1.5), ir.title or "Thanks", size=48, bold=True, align=PP_ALIGN.CENTER)
     text = next((b for b in ir.content_blocks if b["type"] == "text"), None)
     if text:
         c._add_textbox(slide, Inches(1.5), Inches(4.4), Inches(10.3), Inches(0.8), "\n".join(text.get("paragraphs", [])), size=18, color=COLOR_MUTED, align=PP_ALIGN.CENTER)

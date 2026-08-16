@@ -77,6 +77,51 @@ def test_generate_deck_script_with_com_render(tmp_path: Path) -> None:
     assert len(previews) == 12
     for png in previews:
         assert _png_size(png) == (1920, 1080), f"unexpected preview size: {png.name}"
+        coverage, bleed = _pixel_qa(png)
+        assert 0.005 <= coverage <= 0.85, f"{png.name}: implausible content coverage {coverage:.3f}"
+        assert bleed < 0.005, f"{png.name}: content bleeds into the slide edge ({bleed:.4f})"
+
+
+def _pixel_qa(path: Path) -> tuple[float, float]:
+    """Content coverage + edge-bleed fraction, background-adaptive.
+
+    The 12px border band defines the slide background (its histogram mode):
+    layouts keep the edges clear, so the border is pure background. Any
+    pixel deviating by more than 12 luminance levels counts as content.
+    coverage = content fraction of the full frame vs that background;
+    bleed = content fraction inside the border band itself. Works for dark
+    and light decks alike and stays correct when content covers ~half the
+    slide.
+    """
+    from PIL import Image
+
+    def _content_frac(hist: list[int], total: int, bg: int) -> float:
+        content = sum(count for level, count in enumerate(hist) if abs(level - bg) > 12)
+        return content / total
+
+    with Image.open(path) as img:
+        gray = img.convert("L")
+        width, height = gray.size
+        total = width * height
+        bands = [
+            (0, 0, width, 12),
+            (0, height - 12, width, height),
+            (0, 0, 12, height),
+            (width - 12, 0, width, height),
+        ]
+        # Accumulate element-wise (histograms are 256-length lists; += on a
+        # list extends it instead of adding element-wise).
+        band_hist = [0] * 256
+        band_pixels = 0
+        for box in bands:
+            crop = gray.crop(box)
+            band_pixels += crop.size[0] * crop.size[1]
+            for level, count in enumerate(crop.histogram()):
+                band_hist[level] += count
+        bg = max(range(256), key=band_hist.__getitem__)
+        coverage = _content_frac(gray.histogram(), total, bg)
+        bleed = _content_frac(band_hist, band_pixels, bg)
+    return coverage, bleed
 
 
 def _png_size(path: Path) -> tuple[int, int]:
