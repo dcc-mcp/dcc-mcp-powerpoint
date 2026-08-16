@@ -12,13 +12,14 @@ metadata:
     dcc: powerpoint
     layer: domain
     stage: authoring
-    version: 0.1.0
+    version: 0.2.0
     tags:
       - powerpoint
       - deck
       - generate
       - pptx
       - pdf
+      - layers
     search-hint: >-
       generate deck, make ppt, create slides, powerpoint presentation,
       export pdf, slide previews, deck validation
@@ -35,6 +36,19 @@ Deck generation through the designed pipeline (proposal §15.3/§15.4):
 4. desktop COM renderer exports PDF + per-slide previews (skipped with an
    explicit reason when PowerPoint is unavailable — never silent)
 5. structural validation report
+
+Every generated deck is semantic-layer tagged (see `powerpoint-layers`):
+background / decoration / header / content / accent / footer. Layers let
+later edits hide decoration, rebrand accents and restack z-order without
+touching content.
+
+## Related skills
+
+- `powerpoint-edit` — modify an existing deck with a ppt-patch/1.0 document
+- `powerpoint-layers` — show/hide, restack and recolor semantic layers
+- `powerpoint-plugins` — invoke project-specific deck transforms
+
+Full per-layout Deck IR examples: `references/RECIPES.md`.
 
 ## Input contract
 

@@ -2,6 +2,8 @@ tools:
 - name: review_deck_from_renders
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     idempotent_hint: true
   description: >-
@@ -22,3 +24,8 @@ tools:
         description: Run the COM render step when Office is available
         default: true
     required: [input, output_dir]
+  call_examples:
+  - arguments: {"input": "shots.json", "output_dir": "review"}
+    note: Build a review deck with PDF + previews
+  - arguments: {"input": "shots.json", "output_dir": "review", "render": false}
+    note: Build the PPTX only, skip COM render

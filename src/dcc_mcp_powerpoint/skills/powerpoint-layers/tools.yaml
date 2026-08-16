@@ -1,0 +1,190 @@
+tools:
+- name: layer_list
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    List the semantic layers of a PPTX: layer names, per-slide member counts,
+    visibility, z-range, and member shapes with name/id/type/text preview.
+    Untagged shapes are reported too. Run this before any layer mutation.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+    required: [input]
+  call_examples:
+  - arguments: {"input": "deck.pptx"}
+    note: Inventory all layers of a deck before mutating
+- name: layer_set_visibility
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Show or hide every shape in a layer using the native hidden attribute.
+    All slides by default; scope with the optional slides list (1-based).
+    Saves in place unless output is given.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      layer:
+        type: string
+        description: Layer name (e.g. decoration, background, accent)
+      visible:
+        type: boolean
+        description: true to show, false to hide
+      slides:
+        type: array
+        items:
+          type: integer
+        description: Optional 1-based slide indexes to limit the operation
+      output:
+        type: string
+        description: Optional output path; default saves in place
+    required: [input, layer, visible]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "layer": "decoration", "visible": false}
+    note: Hide decorative elements on every slide
+  - arguments: {"input": "deck.pptx", "layer": "decoration", "visible": true, "slides": [2, 3]}
+    note: Restore decoration on slides 2 and 3 only
+- name: layer_reorder
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Restack a layer in z-order: 'front' brings it above everything, 'back'
+    puts it behind everything, 'above <layer>' / 'below <layer>' aligns it
+    against another layer. Applies to every slide by default. Saves in place
+    unless output is given.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      layer:
+        type: string
+        description: Layer name to move
+      position:
+        type: string
+        description: front | back | 'above <layer>' | 'below <layer>'
+      slides:
+        type: array
+        items:
+          type: integer
+        description: Optional 1-based slide indexes to limit the operation
+      output:
+        type: string
+        description: Optional output path; default saves in place
+    required: [input, layer, position]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "layer": "content", "position": "above background"}
+    note: Ensure content renders above the background on every slide
+  - arguments: {"input": "deck.pptx", "layer": "accent", "position": "front"}
+    note: Bring accent marks to the top z-order
+- name: layer_recolor
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Retint every shape in a layer: solid fill, solid line and/or run text
+    color (hex RRGGBB). Only explicitly-set solid fills/lines are touched;
+    theme-inherited colors are skipped and reported. Great for rebranding
+    accent/header layers. Saves in place unless output is given.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      layer:
+        type: string
+        description: Layer name to recolor
+      fill:
+        type: string
+        description: Hex fill color RRGGBB (optional)
+      line:
+        type: string
+        description: Hex line color RRGGBB (optional)
+      text:
+        type: string
+        description: Hex text color RRGGBB (optional)
+      slides:
+        type: array
+        items:
+          type: integer
+        description: Optional 1-based slide indexes to limit the operation
+      output:
+        type: string
+        description: Optional output path; default saves in place
+    required: [input, layer]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "layer": "accent", "fill": "E4572E"}
+    note: Rebrand all accent fills to a new brand color
+  - arguments: {"input": "deck.pptx", "layer": "header", "text": "1B2A41"}
+    note: Restyle all header text runs
+- name: layer_assign
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Tag existing shapes into a layer by selector: shape name (exact or
+    substring), shape id, or all shapes on the selected slides. Required to
+    make hand-made/third-party decks layer-aware. Saves in place unless
+    output is given.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      layer:
+        type: string
+        description: Target layer name
+      select:
+        type: object
+        description: Selector; at least one key required
+        properties:
+          slides:
+            type: array
+            items:
+              type: integer
+            description: Optional 1-based slide indexes (default all)
+          shape:
+            type: string
+            description: Shape name, exact or substring
+          id:
+            type: string
+            description: Shape cNvPr id
+          all_shapes:
+            type: boolean
+            description: Select every shape on the selected slides
+      output:
+        type: string
+        description: Optional output path; default saves in place
+    required: [input, layer, select]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "layer": "media", "select": {"shape": "Picture"}}
+    note: Tag all pictures into a media layer
+  - arguments: {"input": "deck.pptx", "layer": "decoration", "select": {"slides": [1], "all_shapes": true}}
+    note: Tag every shape on slide 1 as decoration

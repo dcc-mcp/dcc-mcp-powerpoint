@@ -1,0 +1,57 @@
+tools:
+- name: plugin_list
+  execution: sync
+  affinity: any
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    Discover and validate installed PowerPoint plugins from the configured
+    plugin roots (DCC_POWERPOINT_PLUGIN_PATH and the user default
+    ~/.dcc-mcp/powerpoint/plugins). Returns each plugin's name, version,
+    description, script, interpreter, timeout and input_schema, plus any
+    manifest validation errors. Run before invoking a plugin.
+  input_schema:
+    type: object
+    properties: {}
+  call_examples:
+  - arguments: {}
+    note: List all discovered plugins with their schemas
+- name: plugin_run
+  execution: sync
+  affinity: any
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Run one installed plugin as an isolated subprocess: stdin JSON
+    {"context": ..., "params": ...}, one JSON result on stdout, timeout
+    enforced. The plugin is resolved by unique name or by directory path.
+    Use the optional pptx field as a shortcut for context.pptx.
+  input_schema:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Plugin name (unique) or plugin directory path
+      params:
+        type: object
+        description: Plugin parameters (validated against its input_schema by the plugin)
+      context:
+        type: object
+        description: Execution context (e.g. {"pptx": "deck.pptx"})
+      pptx:
+        type: string
+        description: Shortcut for context.pptx — the deck the plugin works on
+      paths:
+        type: string
+        description: Optional plugin roots override (os.pathsep-separated directories)
+    required: [name]
+  call_examples:
+  - arguments: {"name": "count-shapes", "pptx": "deck.pptx"}
+    note: Run a plugin with the deck passed via context
+  - arguments: {"name": "my-splitter", "context": {"pptx": "deck.pptx", "out_dir": "parts"}, "params": {"by": "section"}}
+    note: Run a plugin with explicit context and params
