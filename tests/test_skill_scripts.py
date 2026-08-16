@@ -75,6 +75,17 @@ def test_generate_deck_script_with_com_render(tmp_path: Path) -> None:
     assert pdf.is_file()
     previews = list((tmp_path / "previews").glob("slide-*.png"))
     assert len(previews) == 12
+    for png in previews:
+        assert _png_size(png) == (1920, 1080), f"unexpected preview size: {png.name}"
+
+
+def _png_size(path: Path) -> tuple[int, int]:
+    """Read IHDR width/height from the PNG header (no extra dependency)."""
+    header = path.read_bytes()[:24]
+    assert header[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+    width = int.from_bytes(header[16:20], "big")
+    height = int.from_bytes(header[20:24], "big")
+    return width, height
 
 
 def test_review_deck_script(tmp_path: Path) -> None:

@@ -198,12 +198,14 @@ def _timeline(c: DeckCompiler, slide, ir: Slide) -> None:
     items = next((b["items"] for b in ir.content_blocks if b["type"] == "bullets"), [])
     n = max(len(items), 1)
     step = 11.5 / n
+    # Labels must never overlap: width is bounded by the node spacing.
+    label_w = min(3.6, max(step - 0.15, 1.0))
     y_line = Inches(3.6)
     c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(0.9), y_line, Inches(11.5), Pt(3)).fill.fore_color.rgb = COLOR_ACCENT
     for i, item in enumerate(items):
         x = Inches(0.9 + step * i + step / 2)
         c._add_shape(slide, MSO_SHAPE.OVAL, x - Pt(9), y_line - Pt(4), Pt(18), Pt(18), fill=COLOR_ACCENT_2)
-        c._add_textbox(slide, x - Inches(1.8), y_line + Inches(0.25), Inches(3.6), Inches(1.2), f"{i + 1:02d}  {item}", size=15, align=PP_ALIGN.CENTER)
+        c._add_textbox(slide, x - Inches(label_w / 2), y_line + Inches(0.25), Inches(label_w), Inches(1.2), f"{i + 1:02d}  {item}", size=15, align=PP_ALIGN.CENTER)
 
 
 def _kpi_dashboard(c: DeckCompiler, slide, ir: Slide) -> None:
