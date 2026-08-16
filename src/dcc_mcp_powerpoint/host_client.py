@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -34,25 +35,63 @@ def find_host_binary() -> str | None:
     return on_path
 
 
+def _rpc_work_dir() -> Path:
+    """Per-call work directory for file-based stdio redirection.
+
+    Plain mkdir instead of tempfile.mkdtemp: some confined environments
+    (agent sandboxes) deny the mkdtemp/chmod paths while allowing ordinary
+    directory creation. The caller removes it best-effort.
+    """
+    base = Path(os.environ.get("DCC_OFFICE_HOST_TMP") or os.environ.get("TEMP") or os.environ.get("TMP") or ".")
+    base = base.resolve()
+    for _attempt in range(10):
+        candidate = base / f"dcc-office-host-{os.getpid()}-{time.time_ns()}"
+        try:
+            candidate.mkdir()
+            return candidate
+        except FileExistsError:
+            continue
+    raise OSError(f"could not create a host work directory under {base}")
+
+
 def rpc(method: str, params: dict[str, Any], *, app: str = "powerpoint") -> dict[str, Any]:
-    """One JSON-RPC exchange with the host over stdin/stdout."""
+    """One JSON-RPC exchange with the host over stdin/stdout.
+
+    Stdio is redirected through temporary files instead of OS pipes: the
+    wire contract (request JSON on stdin, response JSON on stdout) is
+    unchanged, while confined environments that block anonymous pipes can
+    still talk to the host, and large host output cannot deadlock.
+    """
     binary = find_host_binary()
     if binary is None:
         return {"success": False, "backend": None, "reason": f"OFFICE_HOST_NOT_FOUND: {HOST_EXE} not found"}
     request = {"jsonrpc": "2.0", "id": "req", "method": method, "params": params}
-    proc = subprocess.run(
-        [binary, f"--app={app}"],
-        input=json.dumps(request),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=300,
-        check=False,
-    )
-    if proc.returncode != 0:
-        return {"success": False, "backend": "office_host", "reason": proc.stderr.strip() or "host exited non-zero"}
+    work = _rpc_work_dir()
     try:
-        payload = json.loads(proc.stdout)
+        stdin_path = work / "request.json"
+        stdout_path = work / "response.json"
+        stderr_path = work / "stderr.txt"
+        stdin_path.write_text(json.dumps(request), encoding="utf-8")
+        try:
+            with stdin_path.open("r", encoding="utf-8") as stdin_file, stdout_path.open("w", encoding="utf-8") as stdout_file, stderr_path.open("w", encoding="utf-8") as stderr_file:
+                proc = subprocess.run(
+                    [binary, f"--app={app}"],
+                    stdin=stdin_file,
+                    stdout=stdout_file,
+                    stderr=stderr_file,
+                    timeout=300,
+                    check=False,
+                )
+        except subprocess.TimeoutExpired as exc:
+            return {"success": False, "backend": "office_host", "reason": f"host timed out: {exc}"}
+        stdout = stdout_path.read_text(encoding="utf-8")
+        stderr = stderr_path.read_text(encoding="utf-8")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    if proc.returncode != 0:
+        return {"success": False, "backend": "office_host", "reason": stderr.strip() or "host exited non-zero"}
+    try:
+        payload = json.loads(stdout)
     except json.JSONDecodeError as exc:
         return {"success": False, "backend": "office_host", "reason": f"host output not JSON: {exc}"}
     result = payload.get("result")

@@ -83,8 +83,15 @@ def main() -> None:
         parser = argparse.ArgumentParser(description="tag existing shapes into a layer")
         parser.add_argument("--input", dest="input", required=True, help="PPTX file path")
         parser.add_argument("--layer", dest="layer", required=True, help="target layer name")
-        parser.add_argument("--select", dest="select", help="JSON selector object (stdin only)")
+        parser.add_argument("--select", dest="select", help="JSON selector object, e.g. '{\"shape\": \"Picture\"}'")
+        parser.add_argument("--output", dest="output", help="optional output path; default saves in place")
         params = vars(parser.parse_args())
+        if params.get("select"):
+            try:
+                params["select"] = json.loads(params["select"])
+            except json.JSONDecodeError as exc:
+                _fail(f"--select is not valid JSON: {exc}")
+                sys.exit(1)
     try:
         run(params)
     except Exception as exc:  # noqa: BLE001 — surface as structured error

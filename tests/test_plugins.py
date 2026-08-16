@@ -122,18 +122,17 @@ def test_resolve_plugin_unknown(tmp_root: Path) -> None:
 
 
 class _FakeProc:
-    def __init__(self, returncode: int = 0, stdout: str = "{}", stderr: str = ""):
+    def __init__(self, returncode: int = 0):
         self.returncode = returncode
-        self.stdout = stdout
-        self.stderr = stderr
 
 
 def _fake_run(captured: dict):
-    def _run(argv, input, capture_output, text, encoding, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check):
         captured["argv"] = argv
-        captured["payload"] = json.loads(input)
+        captured["payload"] = json.loads(stdin.read())
         captured["timeout"] = timeout
-        return _FakeProc(0, json.dumps({"success": True, "answer": 42}), "")
+        stdout.write(json.dumps({"success": True, "answer": 42}))
+        return _FakeProc(0)
 
     return _run
 
@@ -161,8 +160,10 @@ def test_run_plugin_timeout_cap(monkeypatch: pytest.MonkeyPatch, tmp_root: Path)
 def test_run_plugin_nonzero_exit(monkeypatch: pytest.MonkeyPatch, tmp_root: Path) -> None:
     directory = _make_plugin(tmp_root, "crash")
 
-    def _run(*args, **kwargs):
-        return _FakeProc(1, "", "boom")
+    def _run(argv, stdin, stdout, stderr, timeout, check):
+        stdin.read()
+        stderr.write("boom")
+        return _FakeProc(1)
 
     monkeypatch.setattr("dcc_mcp_powerpoint.plugins.subprocess.run", _run)
     result = run_plugin(str(directory), None, None)
@@ -174,8 +175,10 @@ def test_run_plugin_nonzero_exit(monkeypatch: pytest.MonkeyPatch, tmp_root: Path
 def test_run_plugin_non_json_stdout(monkeypatch: pytest.MonkeyPatch, tmp_root: Path) -> None:
     directory = _make_plugin(tmp_root, "talkative")
 
-    def _run(*args, **kwargs):
-        return _FakeProc(0, "not json at all", "")
+    def _run(argv, stdin, stdout, stderr, timeout, check):
+        stdin.read()
+        stdout.write("not json at all")
+        return _FakeProc(0)
 
     monkeypatch.setattr("dcc_mcp_powerpoint.plugins.subprocess.run", _run)
     result = run_plugin(str(directory), None, None)

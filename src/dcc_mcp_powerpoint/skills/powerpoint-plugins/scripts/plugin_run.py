@@ -64,7 +64,17 @@ def main() -> None:
         parser = argparse.ArgumentParser(description="Run a PowerPoint plugin")
         parser.add_argument("--name", required=True, help="plugin name or plugin directory")
         parser.add_argument("--paths", help="optional plugin roots (os.pathsep-separated)")
+        parser.add_argument("--pptx", help="shortcut for context.pptx")
+        parser.add_argument("--params", dest="params", help="plugin params as a JSON object")
+        parser.add_argument("--context", dest="context", help="execution context as a JSON object")
         params = vars(parser.parse_args())
+        for key in ("params", "context"):
+            if params.get(key):
+                try:
+                    params[key] = json.loads(params[key])
+                except json.JSONDecodeError as exc:
+                    print(json.dumps({"success": False, "message": f"--{key} is not valid JSON: {exc}", "context": {}}, ensure_ascii=False))
+                    sys.exit(1)
     try:
         run(params)
     except Exception as exc:  # noqa: BLE001 — surface as structured error

@@ -1,0 +1,72 @@
+{
+  "schema_version": "ppt-patch/1.0",
+  "metadata": {
+    "title": "dcc-mcp-PowerPoint 能力边界"
+  },
+  "operations": [
+    {
+      "op": "set_text",
+      "select": {
+        "slide": 1,
+        "layer": "header"
+      },
+      "text": "dcc-mcp-PowerPoint 能力边界（v2）"
+    },
+    {
+      "op": "set_notes",
+      "slide": 17,
+      "text": "收尾：v2 补丁演示——本页备注由 ppt-patch set_notes 改写。"
+    },
+    {
+      "op": "set_shape_fill",
+      "select": {
+        "slide": 2,
+        "layer": "accent"
+      },
+      "color": "FFB454"
+    },
+    {
+      "op": "set_shape_visible",
+      "select": {
+        "slide": 1,
+        "layer": "decoration"
+      },
+      "visible": false
+    },
+    {
+      "op": "add_slide",
+      "position": "end",
+      "slide_ir": {
+        "semantic_layout": "bullets",
+        "title": "补丁引擎实测",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "本页由 add_slide 动态插入",
+              "标题由 set_text 改写（第 1 页）",
+              "备注由 set_notes 改写（第 17 页）",
+              "强调色由 set_shape_fill 换为暖橙（第 2 页）"
+            ]
+          }
+        ],
+        "speaker_notes": "add_slide 把 Deck IR 编译进现有 PPTX，补丁完成后本页存在。"
+      }
+    },
+    {
+      "op": "move_slide",
+      "slide": 18,
+      "to": 2
+    },
+    {
+      "op": "assign_layer",
+      "select": {
+        "slides": [
+          1
+        ],
+        "shape": "::layer=header"
+      },
+      "layer": "hero"
+    }
+  ]
+}

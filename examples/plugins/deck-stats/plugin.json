@@ -1,0 +1,20 @@
+{
+  "name": "deck-stats",
+  "version": "1.0.0",
+  "description": "Report per-slide shape and layer coverage statistics for a PPTX deck",
+  "script": "deck_stats.py",
+  "interpreter": "python",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "pptx": {
+        "type": "string",
+        "description": "Path to the PPTX file"
+      }
+    },
+    "required": [
+      "pptx"
+    ]
+  },
+  "timeout_ms": 60000
+}

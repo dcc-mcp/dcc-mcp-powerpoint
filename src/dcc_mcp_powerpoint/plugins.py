@@ -38,8 +38,10 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -143,6 +145,25 @@ def discover_plugins(paths: str | None = None) -> dict[str, Any]:
     return {"plugins": plugins, "errors": errors}
 
 
+def _plugin_work_dir() -> Path:
+    """Create a per-run work directory for plugin stdio redirection.
+
+    Plain mkdir instead of tempfile.mkdtemp: some confined environments
+    (agent sandboxes) deny the mkdtemp/chmod paths while allowing ordinary
+    directory creation. The caller removes it best-effort.
+    """
+    base = Path(os.environ.get("DCC_POWERPOINT_PLUGIN_TMP") or os.environ.get("TEMP") or os.environ.get("TMP") or ".")
+    base = base.resolve()
+    for _attempt in range(10):
+        candidate = base / f"dcc-ppt-plugin-{os.getpid()}-{time.time_ns()}"
+        try:
+            candidate.mkdir()
+            return candidate
+        except FileExistsError:
+            continue
+    raise OSError(f"could not create a plugin work directory under {base}")
+
+
 def resolve_plugin(name_or_dir: str, paths: str | None = None) -> dict[str, Any]:
     """Resolve a plugin by unique name or by directory path."""
     discovered = discover_plugins(paths)
@@ -176,40 +197,56 @@ def run_plugin(
     *,
     paths: str | None = None,
 ) -> dict[str, Any]:
-    """Run one plugin as a subprocess with the stdin JSON contract."""
+    """Run one plugin as a subprocess with the stdin JSON contract.
+
+    Stdio uses temporary files instead of OS pipes: file redirection keeps
+    the plugin contract identical (stdin JSON -> stdout JSON) while working
+    inside confined environments that block anonymous pipes, and it cannot
+    deadlock on plugins with large output.
+    """
     entry = resolve_plugin(name_or_dir, paths)
     script = Path(entry["dir"]) / entry["script"]
     interpreter = entry.get("interpreter") or sys.executable
     timeout_ms = entry.get("timeout_ms") or 120_000
     payload = {"context": context or {}, "params": params or {}}
+    tmp_path = _plugin_work_dir()
     try:
-        proc = subprocess.run(
-            [str(interpreter), str(script)],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            timeout=timeout_ms / 1000.0,
-            check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
-        return {"success": False, "plugin": entry["name"], "reason": f"plugin timed out after {timeout_ms} ms", "stderr": str(exc)}
+        stdin_path = tmp_path / "stdin.json"
+        stdout_path = tmp_path / "stdout.txt"
+        stderr_path = tmp_path / "stderr.txt"
+        stdin_path.write_text(json.dumps(payload), encoding="utf-8")
+        try:
+            with stdin_path.open("r", encoding="utf-8") as stdin_file, stdout_path.open("w", encoding="utf-8") as stdout_file, stderr_path.open("w", encoding="utf-8") as stderr_file:
+                proc = subprocess.run(
+                    [str(interpreter), str(script)],
+                    stdin=stdin_file,
+                    stdout=stdout_file,
+                    stderr=stderr_file,
+                    timeout=timeout_ms / 1000.0,
+                    check=False,
+                )
+        except subprocess.TimeoutExpired as exc:
+            return {"success": False, "plugin": entry["name"], "reason": f"plugin timed out after {timeout_ms} ms", "stderr": str(exc)}
+        stdout = stdout_path.read_text(encoding="utf-8")
+        stderr = stderr_path.read_text(encoding="utf-8")
+    finally:
+        shutil.rmtree(tmp_path, ignore_errors=True)
     if proc.returncode != 0:
         return {
             "success": False,
             "plugin": entry["name"],
             "reason": f"plugin exited with code {proc.returncode}",
-            "stderr": proc.stderr.strip()[:2000],
+            "stderr": stderr.strip()[:2000],
         }
     try:
-        result = json.loads(proc.stdout)
+        result = json.loads(stdout)
     except json.JSONDecodeError as exc:
         return {
             "success": False,
             "plugin": entry["name"],
             "reason": f"plugin stdout is not JSON: {exc}",
-            "stdout": proc.stdout[:2000],
+            "stdout": stdout[:2000],
         }
     result.setdefault("plugin", entry["name"])
-    result.setdefault("stderr", proc.stderr.strip()[:2000])
+    result.setdefault("stderr", stderr.strip()[:2000])
     return result

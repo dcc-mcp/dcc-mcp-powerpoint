@@ -51,6 +51,17 @@ Agent → dcc-mcp-gateway (Rust, dcc-mcp-core)
   from Maya/Houdini/Blender/Unreal renders + shot/asset metadata
   (proposal §15.7).
 
+## Capability-boundary showcase
+
+`examples/capability_boundary_showcase.json` is a 17-slide deck that walks
+every semantic layout and the M2 capability surfaces: generation (IR → Open
+XML → COM render → validation), smart layers (list / visibility / recolor /
+reorder / assign), the patch engine (7-operation ppt-patch/1.0 with
+all-or-nothing saves) and the plugin registry (deck-stats demo plugin in
+`examples/plugins/`). See
+`examples/output/capability-boundary/README.md` for the full runbook and
+artifact map.
+
 ## Agent usage (via dcc-mcp-cli / gateway)
 
 1. Register the skill packs with the gateway:
