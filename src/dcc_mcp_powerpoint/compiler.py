@@ -136,6 +136,16 @@ class DeckCompiler:
         circle.fill.fore_color.rgb = COLOR_GHOST
         circle.line.fill.background()
 
+    def _add_picture(self, slide, path, left, top, *, height=None, width=None, alt: str = ""):
+        """Embed a picture with alt text — accessibility is part of
+        authoring, not an afterthought (document-pptx learnings)."""
+        pic = slide.shapes.add_picture(str(path), left, top, height=height, width=width)
+        pic.shadow.inherit = False
+        c_nv_pr = pic._element.nvPicPr.find(qn("p:cNvPr"))
+        if c_nv_pr is not None:
+            c_nv_pr.set("descr", alt)
+        return pic
+
     def _content_header(self, slide, title: str) -> None:
         self._add_textbox(slide, Inches(MARGIN), Inches(HEADER_TITLE_Y), Inches(CONTENT_WIDTH), Inches(0.75), title, size=28, bold=True)
         self._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(HEADER_RULE_Y), Inches(0.9), Pt(3.5)).fill.fore_color.rgb = COLOR_ACCENT
@@ -185,7 +195,7 @@ class DeckCompiler:
 def _hero_logo(c: DeckCompiler, slide) -> None:
     logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
     if logo is not None:
-        slide.shapes.add_picture(str(logo), Inches(5.92), Inches(0.75), height=Inches(0.6))
+        c._add_picture(slide, logo, Inches(5.92), Inches(0.75), height=Inches(0.6), alt="DCC-MCP logo")
 
 
 def _title_cover(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -322,11 +332,41 @@ def _image_left_text_right(c: DeckCompiler, slide, ir: Slide) -> None:
         c._content_header(slide, ir.title)
     image = next((b for b in ir.content_blocks if b["type"] == "image"), None)
     if image and Path(image.get("resource", "")).is_file():
-        slide.shapes.add_picture(image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7))
+        c._add_picture(slide, image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7), alt=str(image.get("resource", "")))
     texts = [b for b in ir.content_blocks if b["type"] == "bullets"]
     if texts:
         panel = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.05), Inches(BODY_TOP), Inches(CONTENT_WIDTH - 6.2), Inches(4.7), fill=COLOR_PANEL, radius=0.05)
         c._fill_shape(panel, "\n".join("●  " + i for i in texts[0].get("items", [])), size=14.5, align=PP_ALIGN.LEFT)
+
+
+def _image_grid(c: DeckCompiler, slide, ir: Slide) -> None:
+    """Card grid over slide.images: uniform picture cards with captions.
+
+    Slide.images is the contract (Resource: id = caption, uri = path).
+    Missing files render an explicit placeholder note, never a broken
+    picture (same rule as image_left_text_right).
+    """
+    if ir.title:
+        c._content_header(slide, ir.title)
+    images = list(ir.images)
+    if not images:
+        return
+    cols = 4 if len(images) >= 8 else 2
+    gap = 0.25
+    card_w = (CONTENT_WIDTH - gap * (cols - 1)) / cols
+    rows = (len(images) + cols - 1) // cols
+    card_h = min(1.72, (5.3 - gap * (rows - 1)) / rows)
+    for i, res in enumerate(images):
+        row, col = divmod(i, cols)
+        left = MARGIN + col * (card_w + gap)
+        top = BODY_TOP + row * (card_h + gap)
+        c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(card_w), Inches(card_h), fill=COLOR_PANEL, radius=0.08)
+        if Path(res.uri).is_file():
+            pic_h = card_h - 0.4
+            c._add_picture(slide, res.uri, Inches(left + 0.1), Inches(top + 0.06), height=Inches(pic_h), alt=res.id)
+        else:
+            c._add_textbox(slide, Inches(left + 0.1), Inches(top + 0.3), Inches(card_w - 0.2), Inches(0.4), f"missing_asset: {res.uri}", size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
+        c._add_textbox(slide, Inches(left), Inches(top + card_h - 0.34), Inches(card_w), Inches(0.3), res.id, size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
 
 
 def _closing(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -334,7 +374,7 @@ def _closing(c: DeckCompiler, slide, ir: Slide) -> None:
     c._ghost_circle(slide, 0.35, 0.35, 2.9, 2.9)
     logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
     if logo is not None:
-        slide.shapes.add_picture(str(logo), Inches(5.92), Inches(2.15), height=Inches(0.8))
+        c._add_picture(slide, logo, Inches(5.92), Inches(2.15), height=Inches(0.8), alt="DCC-MCP logo")
     c._add_textbox(slide, Inches(1.5), Inches(3.35), Inches(10.3), Inches(1.2), ir.title or "Thanks", size=46, bold=True, align=PP_ALIGN.CENTER)
     text = next((b for b in ir.content_blocks if b["type"] == "text"), None)
     if text:
@@ -351,6 +391,7 @@ LAYOUTS: dict[str, Callable] = {
     "kpi_dashboard": _kpi_dashboard,
     "technical_architecture": _technical_architecture,
     "image_left_text_right": _image_left_text_right,
+    "image_grid": _image_grid,
     "closing": _closing,
 }
 

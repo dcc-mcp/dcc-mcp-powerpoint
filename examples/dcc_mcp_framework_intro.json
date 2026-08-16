@@ -101,6 +101,36 @@
         "speaker_notes": "数字来自仓库清单与各适配器 AGENTS.md，均为可核实的保守口径。"
       },
       {
+        "semantic_layout": "image_grid",
+        "title": "覆盖的 DCC 工具",
+        "images": [
+          { "id": "Maya", "uri": "examples/assets/logos/maya.png" },
+          { "id": "Blender", "uri": "examples/assets/logos/blender.png" },
+          { "id": "Houdini", "uri": "examples/assets/logos/houdini.png" },
+          { "id": "Photoshop", "uri": "examples/assets/logos/photoshop.png" },
+          { "id": "Unity", "uri": "examples/assets/logos/unity.png" },
+          { "id": "Unreal", "uri": "examples/assets/logos/unreal.png" },
+          { "id": "Nuke", "uri": "examples/assets/logos/nuke.png" },
+          { "id": "3ds Max", "uri": "examples/assets/logos/max3ds.png" },
+          { "id": "Cinema 4D", "uri": "examples/assets/logos/cinema4d.png" },
+          { "id": "Katana", "uri": "examples/assets/logos/katana.png" },
+          { "id": "Marmoset", "uri": "examples/assets/logos/marmoset.png" },
+          { "id": "Substance", "uri": "examples/assets/logos/substance.png" }
+        ],
+        "speaker_notes": "每个 logo 对应一个已发布适配器仓库；卡片图由官方品牌资产归一化生成。"
+      },
+      {
+        "semantic_layout": "image_grid",
+        "title": "真实案例",
+        "images": [
+          { "id": "Blender 螺旋星系", "uri": "examples/assets/showcase/blender-lookdev.png" },
+          { "id": "Marmoset PBR 材质", "uri": "examples/assets/showcase/marmoset-pbr-lookdev.png" },
+          { "id": "Hunyuan 3D 生成", "uri": "examples/assets/showcase/hunyuan3d.png" },
+          { "id": "ZBrush 重拓扑", "uri": "examples/assets/showcase/zbrush-dragon.png" }
+        ],
+        "speaker_notes": "四张图来自官网 showcase 页的公开案例，均可从 dcc-mcp.github.io/showcase 访问。"
+      },
+      {
         "semantic_layout": "section_cover",
         "title": "02 · 执行模型",
         "speaker_notes": "第二部分：一次调用如何走完发现、执行、批处理与产物闭环。"

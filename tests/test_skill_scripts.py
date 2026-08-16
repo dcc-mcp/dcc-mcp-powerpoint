@@ -74,7 +74,7 @@ def test_generate_deck_script_with_com_render(tmp_path: Path) -> None:
     pdf = tmp_path / "draft-dcc-mcp-framework-intro.pdf"
     assert pdf.is_file()
     previews = list((tmp_path / "previews").glob("slide-*.png"))
-    assert len(previews) == 12
+    assert len(previews) == 14
     for png in previews:
         assert _png_size(png) == (1920, 1080), f"unexpected preview size: {png.name}"
         coverage, bleed = _pixel_qa(png)

@@ -44,6 +44,23 @@ tools:
         type: string
         description: Path to the Deck IR JSON file, or a directory of artifacts
     required: [input]
+- name: inventory_deck
+  execution: sync
+  affinity: main
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    Read-only inventory of a PPTX before editing or repair: slide count, shape
+    and picture counts, speaker-note coverage, and pictures missing alt text.
+    Run before touching a branded template or a deck you did not generate.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+    required: [input]
 - name: render_deck
   execution: sync
   affinity: main
