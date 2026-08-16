@@ -75,7 +75,10 @@ class DeckCompiler:
         font.bold = bold
         font.color.rgb = color
         rpr = run._r.get_or_add_rPr()
-        for tag, typeface in (("a:latin", FONT_LATIN), ("a:ea", FONT_CJK)):
+        # Per-script font slots (OfficeCLI lesson): latin, east-asian and
+        # complex-script typefaces are declared separately so CJK/RTL text
+        # never falls back per-character.
+        for tag, typeface in (("a:latin", FONT_LATIN), ("a:ea", FONT_CJK), ("a:cs", FONT_LATIN)):
             existing = rpr.find(qn(tag))
             if existing is None:
                 existing = rpr.makeelement(qn(tag), {})
