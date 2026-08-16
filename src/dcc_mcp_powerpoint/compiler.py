@@ -28,6 +28,7 @@ from pptx.util import Inches, Pt
 
 from .brand import resolve_logo
 from .deck_ir import DeckEnvelope, Slide
+from .layers import tag_shape
 
 SLIDE_WIDTH = Inches(13.333)
 SLIDE_HEIGHT = Inches(7.5)
@@ -56,12 +57,19 @@ BODY_TOP = 1.78
 class DeckCompiler:
     """Compiles a DeckEnvelope into a PPTX file via python-pptx (Open XML)."""
 
-    def __init__(self, envelope: DeckEnvelope) -> None:
+    def __init__(self, envelope: DeckEnvelope, prs: Presentation | None = None) -> None:
+        """Compiler over a fresh presentation, or an existing one.
+
+        Passing an existing ``prs`` lets the patch engine (edits.py)
+        compile new slides into an already-open deck.
+        """
         self.envelope = envelope
-        self.prs = Presentation()
-        self.prs.slide_width = SLIDE_WIDTH
-        self.prs.slide_height = SLIDE_HEIGHT
-        self.blank = self.prs.slide_layouts[6]
+        if prs is None:
+            prs = Presentation()
+            prs.slide_width = SLIDE_WIDTH
+            prs.slide_height = SLIDE_HEIGHT
+        self.prs = prs
+        self.blank = prs.slide_layouts[6]
 
     # -- primitives ---------------------------------------------------------
 
@@ -85,8 +93,9 @@ class DeckCompiler:
                 rpr.append(existing)
             existing.set("typeface", typeface)
 
-    def _add_textbox(self, slide, left, top, width, height, text: str, *, size: float = 18, color: RGBColor = COLOR_TEXT, bold: bool = False, align=PP_ALIGN.LEFT) -> None:
+    def _add_textbox(self, slide, left, top, width, height, text: str, *, size: float = 18, color: RGBColor = COLOR_TEXT, bold: bool = False, align=PP_ALIGN.LEFT, layer: str = "content") -> None:
         box = slide.shapes.add_textbox(left, top, width, height)
+        tag_shape(box, layer)
         box.shadow.inherit = False
         tf = box.text_frame
         tf.word_wrap = True
@@ -100,8 +109,9 @@ class DeckCompiler:
             self._set_run_font(run, size, color, bold)
         return box
 
-    def _add_shape(self, slide, shape_type, left, top, width, height, *, fill: RGBColor = COLOR_PANEL, line: RGBColor | None = None, radius: float | None = None):
+    def _add_shape(self, slide, shape_type, left, top, width, height, *, fill: RGBColor = COLOR_PANEL, line: RGBColor | None = None, radius: float | None = None, layer: str = "content"):
         shape = slide.shapes.add_shape(shape_type, left, top, width, height)
+        tag_shape(shape, layer)
         shape.shadow.inherit = False
         shape.fill.solid()
         shape.fill.fore_color.rgb = fill
@@ -127,6 +137,7 @@ class DeckCompiler:
 
     def _background(self, slide, color: RGBColor = COLOR_BG) -> None:
         rect = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT)
+        tag_shape(rect, "background")
         rect.shadow.inherit = False
         rect.fill.solid()
         rect.fill.fore_color.rgb = color
@@ -134,15 +145,17 @@ class DeckCompiler:
 
     def _ghost_circle(self, slide, left, top, width, height) -> None:
         circle = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(left), Inches(top), Inches(width), Inches(height))
+        tag_shape(circle, "decoration")
         circle.shadow.inherit = False
         circle.fill.solid()
         circle.fill.fore_color.rgb = COLOR_GHOST
         circle.line.fill.background()
 
-    def _add_picture(self, slide, path, left, top, *, height=None, width=None, alt: str = ""):
+    def _add_picture(self, slide, path, left, top, *, height=None, width=None, alt: str = "", layer: str = "content"):
         """Embed a picture with alt text — accessibility is part of
         authoring, not an afterthought (document-pptx learnings)."""
         pic = slide.shapes.add_picture(str(path), left, top, height=height, width=width)
+        tag_shape(pic, layer)
         pic.shadow.inherit = False
         c_nv_pr = pic._element.nvPicPr.find(qn("p:cNvPr"))
         if c_nv_pr is not None:
@@ -150,11 +163,11 @@ class DeckCompiler:
         return pic
 
     def _content_header(self, slide, title: str) -> None:
-        self._add_textbox(slide, Inches(MARGIN), Inches(HEADER_TITLE_Y), Inches(CONTENT_WIDTH), Inches(0.75), title, size=28, bold=True)
-        self._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(HEADER_RULE_Y), Inches(0.9), Pt(3.5)).fill.fore_color.rgb = COLOR_ACCENT
+        self._add_textbox(slide, Inches(MARGIN), Inches(HEADER_TITLE_Y), Inches(CONTENT_WIDTH), Inches(0.75), title, size=28, bold=True, layer="header")
+        self._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(HEADER_RULE_Y), Inches(0.9), Pt(3.5), layer="accent").fill.fore_color.rgb = COLOR_ACCENT
 
     def _footer(self, slide) -> None:
-        self._add_textbox(slide, Inches(MARGIN), SLIDE_HEIGHT - Inches(0.42), Inches(8.0), Inches(0.3), self.envelope.metadata.title, size=10, color=COLOR_MUTED)
+        self._add_textbox(slide, Inches(MARGIN), SLIDE_HEIGHT - Inches(0.42), Inches(8.0), Inches(0.3), self.envelope.metadata.title, size=10, color=COLOR_MUTED, layer="footer")
 
     def _notes(self, slide, notes: str | None) -> None:
         if notes:
@@ -162,6 +175,7 @@ class DeckCompiler:
 
     def _page_number(self, slide, number: int, total: int) -> None:
         box = slide.shapes.add_textbox(SLIDE_WIDTH - Inches(1.6), SLIDE_HEIGHT - Inches(0.5), Inches(1.2), Inches(0.35))
+        tag_shape(box, "footer")
         box.shadow.inherit = False
         box.text_frame.word_wrap = False
         para = box.text_frame.paragraphs[0]
@@ -172,21 +186,27 @@ class DeckCompiler:
 
     # -- slide dispatch (OCP: one registry, one entry per layout) -----------
 
+    def compile_slide(self, slide_ir: Slide, index: int | None = None, total: int | None = None):
+        """Compile one slide into the current presentation; returns the slide."""
+        handler = LAYOUTS.get(slide_ir.semantic_layout)
+        if handler is None:
+            raise KeyError(
+                f"unknown semantic_layout '{slide_ir.semantic_layout}'; "
+                f"known: {', '.join(sorted(LAYOUTS))}"
+            )
+        slide = self.prs.slides.add_slide(self.blank)
+        self._background(slide)
+        handler(self, slide, slide_ir)
+        self._footer(slide)
+        self._notes(slide, slide_ir.speaker_notes)
+        self._page_number(slide, index or 0, total or 0)
+        return slide
+
     def compile(self, out_path: str | Path) -> Path:
         document = self.envelope.document
-        for index, slide_ir in enumerate(document.slides):
-            handler = LAYOUTS.get(slide_ir.semantic_layout)
-            if handler is None:
-                raise KeyError(
-                    f"unknown semantic_layout '{slide_ir.semantic_layout}' (slide {index + 1}); "
-                    f"known: {', '.join(sorted(LAYOUTS))}"
-                )
-            slide = self.prs.slides.add_slide(self.blank)
-            self._background(slide)
-            handler(self, slide, slide_ir)
-            self._footer(slide)
-            self._notes(slide, slide_ir.speaker_notes)
-            self._page_number(slide, index + 1, len(document.slides))
+        total = len(document.slides)
+        for index, slide_ir in enumerate(document.slides, start=1):
+            self.compile_slide(slide_ir, index=index, total=total)
         out = Path(out_path)
         out.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(out))
@@ -198,20 +218,20 @@ class DeckCompiler:
 def _hero_logo(c: DeckCompiler, slide) -> None:
     logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
     if logo is not None:
-        c._add_picture(slide, logo, Inches(5.92), Inches(0.75), height=Inches(0.6), alt="DCC-MCP logo")
+        c._add_picture(slide, logo, Inches(5.92), Inches(0.75), height=Inches(0.6), alt="DCC-MCP logo", layer="decoration")
 
 
 def _title_cover(c: DeckCompiler, slide, ir: Slide) -> None:
     c._background(slide, COLOR_BG)
     c._ghost_circle(slide, 10.15, 4.85, 3.05, 2.5)
     _hero_logo(c, slide)
-    c._add_textbox(slide, Inches(1.5), Inches(2.9), Inches(10.3), Inches(1.4), ir.title or c.envelope.metadata.title, size=54, bold=True, align=PP_ALIGN.CENTER)
-    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(6.22), Inches(4.35), Inches(0.9), Pt(4)).fill.fore_color.rgb = COLOR_ACCENT
+    c._add_textbox(slide, Inches(1.5), Inches(2.9), Inches(10.3), Inches(1.4), ir.title or c.envelope.metadata.title, size=54, bold=True, align=PP_ALIGN.CENTER, layer="header")
+    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(6.22), Inches(4.35), Inches(0.9), Pt(4), layer="accent").fill.fore_color.rgb = COLOR_ACCENT
     subtitle = next((b for b in ir.content_blocks if b["type"] == "text"), None)
     if subtitle:
         text = "\n".join(subtitle.get("paragraphs", []))
-        c._add_textbox(slide, Inches(1.5), Inches(4.65), Inches(10.3), Inches(1.0), text, size=18, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
-    c._add_textbox(slide, Inches(1.5), Inches(6.85), Inches(10.3), Inches(0.35), f"{c.envelope.metadata.title} · {c.envelope.document_id}", size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
+        c._add_textbox(slide, Inches(1.5), Inches(4.65), Inches(10.3), Inches(1.0), text, size=18, color=COLOR_MUTED, align=PP_ALIGN.CENTER, layer="header")
+    c._add_textbox(slide, Inches(1.5), Inches(6.85), Inches(10.3), Inches(0.35), f"{c.envelope.metadata.title} · {c.envelope.document_id}", size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER, layer="footer")
 
 
 def _section_cover(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -223,12 +243,12 @@ def _section_cover(c: DeckCompiler, slide, ir: Slide) -> None:
     if match:
         number, title = match.group(1), match.group(2)
     if number:
-        c._add_textbox(slide, Inches(0.7), Inches(0.7), Inches(5.0), Inches(4.2), number, size=200, color=COLOR_GHOST, bold=True)
-    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(3.05), Inches(0.18), Inches(1.2)).fill.fore_color.rgb = COLOR_ACCENT_2
-    c._add_textbox(slide, Inches(1.3), Inches(3.0), Inches(11.0), Inches(1.4), title, size=44, bold=True)
+        c._add_textbox(slide, Inches(0.7), Inches(0.7), Inches(5.0), Inches(4.2), number, size=200, color=COLOR_GHOST, bold=True, layer="decoration")
+    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(3.05), Inches(0.18), Inches(1.2), layer="accent").fill.fore_color.rgb = COLOR_ACCENT_2
+    c._add_textbox(slide, Inches(1.3), Inches(3.0), Inches(11.0), Inches(1.4), title, size=44, bold=True, layer="header")
     text = next((b for b in ir.content_blocks if b["type"] == "text"), None)
     if text:
-        c._add_textbox(slide, Inches(1.35), Inches(4.5), Inches(10.5), Inches(0.6), "\n".join(text.get("paragraphs", [])), size=15, color=COLOR_MUTED)
+        c._add_textbox(slide, Inches(1.35), Inches(4.5), Inches(10.5), Inches(0.6), "\n".join(text.get("paragraphs", [])), size=15, color=COLOR_MUTED, layer="content")
 
 
 def _bullets(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -240,10 +260,10 @@ def _bullets(c: DeckCompiler, slide, ir: Slide) -> None:
             continue
         items = block.get("items", [])
         for i, item in enumerate(items):
-            c._add_shape(slide, MSO_SHAPE.OVAL, Inches(MARGIN + 0.05), Inches(y + 0.17), Pt(13), Pt(13), fill=COLOR_ACCENT_2)
-            c._add_textbox(slide, Inches(MARGIN + 0.45), Inches(y), Inches(CONTENT_WIDTH - 0.55), Inches(0.9), item, size=16.5)
+            c._add_shape(slide, MSO_SHAPE.OVAL, Inches(MARGIN + 0.05), Inches(y + 0.17), Pt(13), Pt(13), fill=COLOR_ACCENT_2, layer="accent")
+            c._add_textbox(slide, Inches(MARGIN + 0.45), Inches(y), Inches(CONTENT_WIDTH - 0.55), Inches(0.9), item, size=16.5, layer="content")
             if i < len(items) - 1:
-                c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(y + 0.95), Inches(CONTENT_WIDTH), Pt(1.2)).fill.fore_color.rgb = COLOR_GHOST
+                c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), Inches(y + 0.95), Inches(CONTENT_WIDTH), Pt(1.2), layer="decoration").fill.fore_color.rgb = COLOR_GHOST
             y += 1.02
 
 
@@ -255,9 +275,9 @@ def _two_columns(c: DeckCompiler, slide, ir: Slide) -> None:
         left = Inches(MARGIN + col * 6.0)
         items = block.get("items", [])
         header_text = items[0] if items else ""
-        head = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP), Inches(5.6), Inches(0.62), fill=COLOR_ACCENT if col == 0 else COLOR_ACCENT_2, radius=0.16)
+        head = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP), Inches(5.6), Inches(0.62), fill=COLOR_ACCENT if col == 0 else COLOR_ACCENT_2, radius=0.16, layer="header")
         c._fill_shape(head, header_text, size=16, bold=True, align=PP_ALIGN.LEFT)
-        body = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP + 0.74), Inches(5.6), Inches(4.1), fill=COLOR_PANEL, radius=0.05)
+        body = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP + 0.74), Inches(5.6), Inches(4.1), fill=COLOR_PANEL, radius=0.05, layer="content")
         c._fill_shape(body, "\n".join("●  " + i for i in items[1:]), size=14.5, align=PP_ALIGN.LEFT)
 
 
@@ -269,9 +289,9 @@ def _comparison(c: DeckCompiler, slide, ir: Slide) -> None:
         left = Inches(MARGIN + col * 6.0)
         items = block.get("items", [])
         color = COLOR_ACCENT if col == 0 else COLOR_ACCENT_2
-        head = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP), Inches(5.6), Inches(0.62), fill=color, radius=0.16)
+        head = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP), Inches(5.6), Inches(0.62), fill=color, radius=0.16, layer="header")
         c._fill_shape(head, items[0] if items else "", size=16, bold=True)
-        body = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP + 0.74), Inches(5.6), Inches(4.1), fill=COLOR_PANEL, radius=0.05)
+        body = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(BODY_TOP + 0.74), Inches(5.6), Inches(4.1), fill=COLOR_PANEL, radius=0.05, layer="content")
         c._fill_shape(body, "\n".join("✓  " + i for i in items[1:]), size=14.5, align=PP_ALIGN.LEFT)
 
 
@@ -283,14 +303,14 @@ def _timeline(c: DeckCompiler, slide, ir: Slide) -> None:
     step = CONTENT_WIDTH / n
     label_w = min(3.6, max(step - 0.3, 1.0))
     y_line = Inches(3.55)
-    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), y_line, Inches(CONTENT_WIDTH), Pt(3)).fill.fore_color.rgb = COLOR_ACCENT
+    c._add_shape(slide, MSO_SHAPE.RECTANGLE, Inches(MARGIN), y_line, Inches(CONTENT_WIDTH), Pt(3), layer="accent").fill.fore_color.rgb = COLOR_ACCENT
     for i, item in enumerate(items):
         x = Inches(MARGIN + step * i + step / 2)
-        circle = c._add_shape(slide, MSO_SHAPE.OVAL, x - Inches(0.17), y_line - Inches(0.17), Inches(0.34), Inches(0.34), fill=COLOR_BG, line=COLOR_ACCENT_2)
+        circle = c._add_shape(slide, MSO_SHAPE.OVAL, x - Inches(0.17), y_line - Inches(0.17), Inches(0.34), Inches(0.34), fill=COLOR_BG, line=COLOR_ACCENT_2, layer="accent")
         circle.line.width = Pt(1.5)
         c._fill_shape(circle, f"{i + 1}", size=12, color=COLOR_ACCENT_2, bold=True)
         label_y = Inches(2.3) if i % 2 == 0 else Inches(3.9)
-        c._add_textbox(slide, x - Inches(label_w / 2), label_y, Inches(label_w), Inches(1.05), item, size=13.5, align=PP_ALIGN.CENTER)
+        c._add_textbox(slide, x - Inches(label_w / 2), label_y, Inches(label_w), Inches(1.05), item, size=13.5, align=PP_ALIGN.CENTER, layer="content")
 
 
 def _kpi_dashboard(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -302,8 +322,8 @@ def _kpi_dashboard(c: DeckCompiler, slide, ir: Slide) -> None:
         row, col = divmod(i, cols)
         left = Inches(MARGIN + col * 3.9)
         top = Inches(BODY_TOP + row * 2.1)
-        card = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, top, Inches(3.6), Inches(1.85), fill=COLOR_PANEL, radius=0.07)
-        c._add_shape(slide, MSO_SHAPE.RECTANGLE, left + Inches(0.4), top, Inches(0.55), Pt(4)).fill.fore_color.rgb = COLOR_ACCENT_2
+        card = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, top, Inches(3.6), Inches(1.85), fill=COLOR_PANEL, radius=0.07, layer="content")
+        c._add_shape(slide, MSO_SHAPE.RECTANGLE, left + Inches(0.4), top, Inches(0.55), Pt(4), layer="accent").fill.fore_color.rgb = COLOR_ACCENT_2
         parts = item.split("|", 1)
         value = parts[0].strip()
         label = parts[1].strip() if len(parts) > 1 else ""
@@ -318,14 +338,15 @@ def _technical_architecture(c: DeckCompiler, slide, ir: Slide) -> None:
     centers: list[float] = []
     for i, item in enumerate(items):
         top = Inches(top_ins + i * 0.95)
-        chip = c._add_shape(slide, MSO_SHAPE.OVAL, Inches(MARGIN + 1.45), top + Inches(0.16), Inches(0.42), Inches(0.42), fill=COLOR_BG_SOFT, line=COLOR_ACCENT)
+        chip = c._add_shape(slide, MSO_SHAPE.OVAL, Inches(MARGIN + 1.45), top + Inches(0.16), Inches(0.42), Inches(0.42), fill=COLOR_BG_SOFT, line=COLOR_ACCENT, layer="accent")
         chip.line.width = Pt(1.2)
         c._fill_shape(chip, f"{i + 1}", size=12, color=COLOR_ACCENT, bold=True)
-        box = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(MARGIN + 2.15), top, Inches(CONTENT_WIDTH - 2.3), Inches(0.78), fill=COLOR_PANEL, radius=0.10)
+        box = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(MARGIN + 2.15), top, Inches(CONTENT_WIDTH - 2.3), Inches(0.78), fill=COLOR_PANEL, radius=0.10, layer="content")
         c._fill_shape(box, item, size=14.5)
         centers.append(top_ins + i * 0.95 + 0.39)
     x = Inches(MARGIN + 1.66)
     conn = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, x, Inches(centers[0] + 0.18), x, Inches(centers[-1] + 0.18))
+    tag_shape(conn, "accent")
     conn.line.color.rgb = COLOR_ACCENT
     conn.shadow.inherit = False
 
@@ -335,10 +356,10 @@ def _image_left_text_right(c: DeckCompiler, slide, ir: Slide) -> None:
         c._content_header(slide, ir.title)
     image = next((b for b in ir.content_blocks if b["type"] == "image"), None)
     if image and Path(image.get("resource", "")).is_file():
-        c._add_picture(slide, image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7), alt=ir.title or "slide image")
+        c._add_picture(slide, image["resource"], Inches(MARGIN), Inches(BODY_TOP), height=Inches(4.7), alt=ir.title or "slide image", layer="content")
     texts = [b for b in ir.content_blocks if b["type"] == "bullets"]
     if texts:
-        panel = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.05), Inches(BODY_TOP), Inches(CONTENT_WIDTH - 6.2), Inches(4.7), fill=COLOR_PANEL, radius=0.05)
+        panel = c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.05), Inches(BODY_TOP), Inches(CONTENT_WIDTH - 6.2), Inches(4.7), fill=COLOR_PANEL, radius=0.05, layer="content")
         c._fill_shape(panel, "\n".join("●  " + i for i in texts[0].get("items", [])), size=14.5, align=PP_ALIGN.LEFT)
 
 
@@ -363,13 +384,13 @@ def _image_grid(c: DeckCompiler, slide, ir: Slide) -> None:
         row, col = divmod(i, cols)
         left = MARGIN + col * (card_w + gap)
         top = BODY_TOP + row * (card_h + gap)
-        c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(card_w), Inches(card_h), fill=COLOR_PANEL, radius=0.08)
+        c._add_shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(card_w), Inches(card_h), fill=COLOR_PANEL, radius=0.08, layer="content")
         if Path(res.uri).is_file():
             pic_h = card_h - 0.4
-            c._add_picture(slide, res.uri, Inches(left + 0.1), Inches(top + 0.06), height=Inches(pic_h), alt=res.id)
+            c._add_picture(slide, res.uri, Inches(left + 0.1), Inches(top + 0.06), height=Inches(pic_h), alt=res.id, layer="content")
         else:
-            c._add_textbox(slide, Inches(left + 0.1), Inches(top + 0.3), Inches(card_w - 0.2), Inches(0.4), f"missing_asset: {res.uri}", size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
-        c._add_textbox(slide, Inches(left), Inches(top + card_h - 0.34), Inches(card_w), Inches(0.3), res.id, size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
+            c._add_textbox(slide, Inches(left + 0.1), Inches(top + 0.3), Inches(card_w - 0.2), Inches(0.4), f"missing_asset: {res.uri}", size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER, layer="content")
+        c._add_textbox(slide, Inches(left), Inches(top + card_h - 0.34), Inches(card_w), Inches(0.3), res.id, size=11, color=COLOR_MUTED, align=PP_ALIGN.CENTER, layer="content")
 
 
 def _closing(c: DeckCompiler, slide, ir: Slide) -> None:
@@ -377,11 +398,11 @@ def _closing(c: DeckCompiler, slide, ir: Slide) -> None:
     c._ghost_circle(slide, 0.35, 0.35, 2.9, 2.9)
     logo = resolve_logo(c.envelope.template.uri if c.envelope.template else None, dark_background=True)
     if logo is not None:
-        c._add_picture(slide, logo, Inches(5.92), Inches(2.15), height=Inches(0.8), alt="DCC-MCP logo")
-    c._add_textbox(slide, Inches(1.5), Inches(3.35), Inches(10.3), Inches(1.2), ir.title or "Thanks", size=46, bold=True, align=PP_ALIGN.CENTER)
+        c._add_picture(slide, logo, Inches(5.92), Inches(2.15), height=Inches(0.8), alt="DCC-MCP logo", layer="decoration")
+    c._add_textbox(slide, Inches(1.5), Inches(3.35), Inches(10.3), Inches(1.2), ir.title or "Thanks", size=46, bold=True, align=PP_ALIGN.CENTER, layer="header")
     text = next((b for b in ir.content_blocks if b["type"] == "text"), None)
     if text:
-        c._add_textbox(slide, Inches(1.5), Inches(4.75), Inches(10.3), Inches(0.7), "\n".join(text.get("paragraphs", [])), size=16, color=COLOR_MUTED, align=PP_ALIGN.CENTER)
+        c._add_textbox(slide, Inches(1.5), Inches(4.75), Inches(10.3), Inches(0.7), "\n".join(text.get("paragraphs", [])), size=16, color=COLOR_MUTED, align=PP_ALIGN.CENTER, layer="content")
 
 
 LAYOUTS: dict[str, Callable] = {

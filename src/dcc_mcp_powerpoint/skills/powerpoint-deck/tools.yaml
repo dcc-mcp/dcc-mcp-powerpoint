@@ -2,13 +2,17 @@ tools:
 - name: generate_deck
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     idempotent_hint: true
   description: >-
     Compile a Deck IR JSON (office-ir/1.0 presentation envelope) into an
     editable 16:9 PPTX via the Open XML backend, then render PDF + per-slide
     PNG previews through the desktop COM backend when PowerPoint is
-    installed. Returns artifacts, backend info and a structural validation
+    installed. Generated decks are semantic-layer tagged (background/
+    decoration/header/content/accent/footer) for the powerpoint-layers
+    skill. Returns artifacts, backend info and a structural validation
     report. Use for any deck creation task.
   input_schema:
     type: object
@@ -28,9 +32,16 @@ tools:
         description: Export per-slide PNG previews during render
         default: true
     required: [input, output_dir]
+  call_examples:
+  - arguments: {"input": "deck.json", "output_dir": "out"}
+    note: Compile a deck with PDF + previews when Office is installed
+  - arguments: {"input": "deck.json", "output_dir": "out", "render": false}
+    note: Compile the PPTX only, skip the COM render step
 - name: validate_deck
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     read_only_hint: true
     idempotent_hint: true
@@ -44,9 +55,16 @@ tools:
         type: string
         description: Path to the Deck IR JSON file, or a directory of artifacts
     required: [input]
+  call_examples:
+  - arguments: {"input": "deck.json"}
+    note: Validate a Deck IR envelope before compiling
+  - arguments: {"input": "out"}
+    note: Check that produced artifacts exist and are non-empty
 - name: analyze_deck
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     read_only_hint: true
     idempotent_hint: true
@@ -62,9 +80,14 @@ tools:
         type: string
         description: Path to the PPTX file
     required: [input]
+  call_examples:
+  - arguments: {"input": "deck.pptx"}
+    note: Analyze a deck before review or after a patch
 - name: inventory_deck
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     read_only_hint: true
     idempotent_hint: true
@@ -79,9 +102,14 @@ tools:
         type: string
         description: Path to the PPTX file
     required: [input]
+  call_examples:
+  - arguments: {"input": "deck.pptx"}
+    note: Inventory a deck before editing or repairing it
 - name: render_deck
   execution: sync
   affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
   annotations:
     idempotent_hint: true
   description: >-
@@ -106,3 +134,8 @@ tools:
         description: Export per-slide PNG previews
         default: true
     required: [input, output_dir]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "output_dir": "out"}
+    note: Render PDF + per-slide previews of an existing deck
+  - arguments: {"input": "deck.pptx", "output_dir": "out", "pdf": true, "previews": false}
+    note: Export only the PDF

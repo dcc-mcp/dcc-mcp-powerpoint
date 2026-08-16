@@ -22,11 +22,17 @@ production COM path (dcc-mcp-office M1).
 |---|---|
 | `src/dcc_mcp_powerpoint/` | adapter package |
 | `src/dcc_mcp_powerpoint/deck_ir.py` | Deck IR contract (mirrors dcc-mcp-office-ir) |
-| `src/dcc_mcp_powerpoint/compiler.py` | Open XML compiler: semantic-layout registry → PPTX |
+| `src/dcc_mcp_powerpoint/compiler.py` | Open XML compiler: semantic-layout registry → PPTX (layer-tagged) |
 | `src/dcc_mcp_powerpoint/render.py` | COM renderer: `DispatchEx` dedicated instance → PDF + PNGs |
 | `src/dcc_mcp_powerpoint/validate.py` | structural + artifact validation reports |
+| `src/dcc_mcp_powerpoint/layers.py` | opt-in smart layers: `::layer=` name tags, visibility/z-order/recolor/assign |
+| `src/dcc_mcp_powerpoint/edits.py` | opt-in ppt-patch/1.0 engine: text/images/slides/layers, all-or-nothing |
+| `src/dcc_mcp_powerpoint/plugins.py` | stdlib-only plugin registry: discover/validate/run (subprocess contract) |
 | `src/dcc_mcp_powerpoint/sidecar/office_host.py` | launcher: locate/verify/start `office-host.exe --app=powerpoint` |
-| `src/dcc_mcp_powerpoint/skills/powerpoint-deck/` | SKILL.md + tools.yaml + scripts (generate/validate/render) |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-deck/` | SKILL.md + tools.yaml + scripts (generate/validate/render) + RECIPES |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-edit/` | slide_tree + edit_deck (depends: powerpoint-deck) |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-layers/` | layer list/visibility/reorder/recolor/assign |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-plugins/` | plugin_list + plugin_run |
 | `src/dcc_mcp_powerpoint/skills/powerpoint-review/` | `review_deck_from_renders` skill |
 | `examples/` | framework-intro Deck IR + generated PPTX/PDF/previews |
 | `tests/` | pytest (COM only via subprocess boundary) |

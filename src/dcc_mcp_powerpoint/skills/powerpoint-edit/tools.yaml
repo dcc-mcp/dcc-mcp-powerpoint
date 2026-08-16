@@ -1,0 +1,59 @@
+tools:
+- name: slide_tree
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    Dump the shape tree of a PPTX for patch authoring: per slide, every
+    shape with its 1-based index, name, cNvPr id, layer tag, type, hidden
+    flag and text preview. Use before writing a ppt-patch/1.0 document.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      slide:
+        type: integer
+        description: Optional 1-based slide index to limit the dump
+    required: [input]
+  call_examples:
+  - arguments: {"input": "deck.pptx"}
+    note: Inspect every slide before authoring a patch
+  - arguments: {"input": "deck.pptx", "slide": 3}
+    note: Inspect one slide only
+- name: edit_deck
+  execution: sync
+  affinity: main
+  enforce_thread_affinity: true
+  job_strategy: monolithic
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Apply a ppt-patch/1.0 patch document to an existing PPTX: text, notes,
+    pictures, fills/lines, visibility, shape deletion, slide add/delete/move
+    (new slides compile from Deck IR layouts) and layer assignment. The
+    output file is written only when every operation succeeded; otherwise
+    the input stays untouched and the failing operation index is reported.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file to modify
+      patch:
+        type: string
+        description: Path to the ppt-patch/1.0 JSON document
+      output:
+        type: string
+        description: Optional output path; default <stem>-patched.pptx next to the input
+    required: [input, patch]
+  call_examples:
+  - arguments: {"input": "deck.pptx", "patch": "changes.json"}
+    note: Apply a prepared patch document, writing deck-patched.pptx
+  - arguments: {"input": "deck.pptx", "patch": "changes.json", "output": "deck-v2.pptx"}
+    note: Apply a patch to an explicit output path

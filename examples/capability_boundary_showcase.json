@@ -1,0 +1,343 @@
+{
+  "schema_version": "office-ir/1.0",
+  "kind": "presentation",
+  "document_id": "draft:capability-boundary-showcase",
+  "metadata": {
+    "title": "dcc-mcp-PowerPoint 能力边界",
+    "author": "DCC-MCP Agent",
+    "language": "zh-CN"
+  },
+  "template": {
+    "uri": "brand://dcc-mcp/capability-boundary-v1",
+    "version": "1.0.0"
+  },
+  "resources": [],
+  "document": {
+    "slides": [
+      {
+        "semantic_layout": "title_cover",
+        "title": "dcc-mcp-PowerPoint 能力边界",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "生成管线 × 语义图层 × 补丁引擎 × 插件注册表",
+              "11 种语义布局 · 6 个内置图层 · 12 种补丁操作 · 全链路验证"
+            ]
+          }
+        ],
+        "speaker_notes": "开场：本 Deck 自己演示自己的能力边界——从 Deck IR 生成，再用图层、补丁和插件二次加工。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "01 · 生成管线",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "Deck IR → Open XML 编译 → COM 渲染 → 结构验证"
+            ]
+          }
+        ],
+        "speaker_notes": "第一部分：生成管线如何把结构化内容变成可编辑的 PPTX。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "生成管线四步",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Deck IR 契约（office-ir/1.0）：语义布局 + 内容块，绝不手写坐标",
+              "Open XML 编译器：11 种布局注册表，一键扩展，不碰分发逻辑",
+              "桌面 COM 渲染：PDF + 逐页 PNG（DispatchEx 专用实例）",
+              "结构验证：信封契约 + 产物存在性 + 溢出与对比度检查"
+            ]
+          }
+        ],
+        "speaker_notes": "四步管线，每步都有契约和验证。"
+      },
+      {
+        "semantic_layout": "technical_architecture",
+        "title": "架构分层",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Deck IR：镜像 dcc-mcp-office-ir 演示文稿 schema",
+              "DeckCompiler：语义布局注册表 → python-pptx Open XML",
+              "Renderer：PowerPoint COM → PDF / PNG 预览",
+              "Validate + Analyze：结构与视觉问题诊断",
+              "Layers / Edits / Plugins：生成后能力面（本分支新增）"
+            ]
+          }
+        ],
+        "speaker_notes": "五层结构：契约、编译、渲染、验证、生成后能力面。"
+      },
+      {
+        "semantic_layout": "kpi_dashboard",
+        "title": "能力数字",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "11 | 语义布局",
+              "6 | 内置图层",
+              "12 | 补丁操作",
+              "4 | 技能包",
+              "2 | 渲染产物（PDF/PNG）",
+              "0 | 运行时第三方依赖"
+            ]
+          }
+        ],
+        "speaker_notes": "能力边界用数字说话。"
+      },
+      {
+        "semantic_layout": "two_columns",
+        "title": "双后端对比",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Open XML 后端",
+              "无 Office 环境可编译",
+              "结构确定性、可版本管理",
+              "毫秒级生成"
+            ]
+          },
+          {
+            "type": "bullets",
+            "items": [
+              "COM 渲染后端",
+              "PDF 矢量导出",
+              "逐页 PNG 预览",
+              "Office 缺席时显式降级"
+            ]
+          }
+        ],
+        "speaker_notes": "编译与渲染解耦：Open XML 负责结构，COM 负责保真。"
+      },
+      {
+        "semantic_layout": "comparison",
+        "title": "设计取舍",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "结构化优先",
+              "语义布局而非坐标",
+              "契约先行、验证兜底",
+              "写操作不静默降级"
+            ]
+          },
+          {
+            "type": "bullets",
+            "items": [
+              "能力边界内自研",
+              "C# 宿主承重（COM/OpenXML）",
+              "越界能力回上游 dcc-mcp-office",
+              "缺陷修复优先提 PR 上游"
+            ]
+          }
+        ],
+        "speaker_notes": "左边是工程原则，右边是本仓库与上游的分工。"
+      },
+      {
+        "semantic_layout": "timeline",
+        "title": "一次调用的旅程",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "叙述规划",
+              "Deck IR",
+              "编译",
+              "渲染",
+              "验证"
+            ]
+          }
+        ],
+        "speaker_notes": "五步旅程，本 Deck 完整走过。"
+      },
+      {
+        "semantic_layout": "image_left_text_right",
+        "title": "真实案例：Blender Lookdev",
+        "content_blocks": [
+          {
+            "type": "image",
+            "resource": "examples/assets/showcase/blender-lookdev.png"
+          },
+          {
+            "type": "bullets",
+            "items": [
+              "来自 DCC 渲染管线的真实产物",
+              "图片左置 + 要点右侧面板",
+              "alt 文本随图片写入（可访问性）",
+              "缺失资产显式占位，绝不静默丢图"
+            ]
+          }
+        ],
+        "speaker_notes": "图左文右布局直接复用管线内真实渲染图。"
+      },
+      {
+        "semantic_layout": "image_grid",
+        "title": "覆盖的 DCC 工具",
+        "images": [
+          {
+            "id": "Maya",
+            "uri": "examples/assets/logos/maya.png"
+          },
+          {
+            "id": "Blender",
+            "uri": "examples/assets/logos/blender.png"
+          },
+          {
+            "id": "Houdini",
+            "uri": "examples/assets/logos/houdini.png"
+          },
+          {
+            "id": "Photoshop",
+            "uri": "examples/assets/logos/photoshop.png"
+          },
+          {
+            "id": "Unity",
+            "uri": "examples/assets/logos/unity.png"
+          },
+          {
+            "id": "Unreal",
+            "uri": "examples/assets/logos/unreal.png"
+          },
+          {
+            "id": "Nuke",
+            "uri": "examples/assets/logos/nuke.png"
+          },
+          {
+            "id": "3ds Max",
+            "uri": "examples/assets/logos/max3ds.png"
+          }
+        ],
+        "speaker_notes": "8 个 logo 卡片网格，卡片图统一归一化。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "02 · 语义图层",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "原生 OOXML 标签 ::layer= 存活于 PowerPoint 往返"
+            ]
+          }
+        ],
+        "speaker_notes": "第二部分：语义图层系统——显隐、层级、重着色、归属。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "六个内置图层",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "background 整页背景 · decoration 幽灵圆/logo/分隔线",
+              "header 标题栏 · content 要点/卡片/图片",
+              "accent 强调条/圆点/连接线 · footer 页脚/页码",
+              "图层操作：显隐、z 序重排、重着色、形状归属"
+            ]
+          }
+        ],
+        "speaker_notes": "编译器保证六个图层标签，任何生成 Deck 都可按层操作。"
+      },
+      {
+        "semantic_layout": "kpi_dashboard",
+        "title": "图层操作面",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "1 | layer_list 清点",
+              "2 | set_visibility 显隐",
+              "3 | reorder 前后/上下",
+              "4 | recolor 重着色",
+              "5 | assign 归属",
+              "6 | 按幻灯片范围"
+            ]
+          }
+        ],
+        "speaker_notes": "图层能力全清单，本分支演示脚本逐项验证。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "03 · 补丁引擎与插件",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "ppt-patch/1.0 全有或全无 · plugin.json 隔离子进程"
+            ]
+          }
+        ],
+        "speaker_notes": "第三部分：结构化补丁与插件注册表。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "补丁操作面",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "set_text / set_notes：文本与备注替换",
+              "set_image / set_shape_fill / set_shape_line：媒体与样式",
+              "set_shape_visible / delete_shape：显隐与删除",
+              "add_slide / delete_slide / move_slide：页面结构",
+              "assign_layer：形状归属图层",
+              "选择器无坐标：slide + layer + shape + id + index"
+            ]
+          }
+        ],
+        "speaker_notes": "12 种操作，任何失败即整体回滚，输入文件绝不半改。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "插件注册表",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "plugin.json 契约：name/version/script/interpreter/schema",
+              "显式发现根：DCC_POWERPOINT_PLUGIN_PATH + 用户目录",
+              "隔离子进程：stdin JSON → stdout 单 JSON 结果",
+              "永不自动下载、永不 import 插件代码"
+            ]
+          }
+        ],
+        "speaker_notes": "插件是用户安装的代码，注册表只发现、校验、隔离子进程执行。"
+      },
+      {
+        "semantic_layout": "closing",
+        "title": "Thanks",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "dcc-mcp-PowerPoint · 让 AI 做高品质幻灯片"
+            ]
+          }
+        ],
+        "speaker_notes": "收尾：能力边界持续迭代，缺陷上游修复闭环。"
+      }
+    ],
+    "export_policy": {
+      "pdf": true,
+      "slide_previews": true
+    }
+  },
+  "validation": [
+    "no_text_overflow",
+    "no_out_of_bounds"
+  ],
+  "outputs": [
+    "pptx",
+    "pdf",
+    "slide-previews"
+  ]
+}

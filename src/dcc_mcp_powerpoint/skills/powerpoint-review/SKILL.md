@@ -12,7 +12,7 @@ metadata:
     dcc: powerpoint
     layer: domain
     stage: review
-    version: 0.1.0
+    version: 0.1.1
     tags:
       - powerpoint
       - review

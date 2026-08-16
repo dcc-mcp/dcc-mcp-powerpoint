@@ -62,3 +62,32 @@ COM 渲染）由我们自己的 dcc-mcp-office C# 宿主提供，Python 走 offi
   内置）+ BCL COM 互操作
 - 第三方资产（模板/字体/素材）仅经许可核验 + 自托管后入库，构建/运行时
   不从外部源拉取
+
+## 2026-08-18 — 编辑 / 智能图层 / 插件三技能迭代（feat/smart-layers-plugin-skills）
+
+- 新增智能图层系统（layers.py）：图层成员关系记录在形状原生名称的
+  `::layer=<name>` 标签里（cNvPr/@name），零 sidecar、PowerPoint 往返无损；
+  编译器现在给每个形状打上六大内置图层 background/decoration/header/
+  content/accent/footer —— 生成即图层化。图层操作直改 spTree：hidden 属性
+  （显隐）、子元素重排（z-order front/back/above/below）、显式 solid 填充/
+  线条/run 颜色换色（主题继承色诚实跳过，绝不猜测）。
+- 新增 ppt-patch/1.0 补丁引擎（edits.py）：结构化、坐标无关的 deck 修改。
+  selector = slide/layer/shape/id/index 的组合；操作覆盖文本、备注、换图、
+  填充/描边、显隐、删除形状、增删移幻灯片（新幻灯片复用编译器语义布局
+  注册表）、图层打标。事务语义：任何操作失败则在保存前中止 —— 输入文件
+  不会被改坏。默认输出 <stem>-patched.pptx。
+- 新增插件注册表（plugins.py，纯 stdlib）：插件 = 目录 + plugin.json 清单
+  （slug 名、script 不得逃逸插件目录、timeout 上限 600s）；发现根仅为
+  DCC_POWERPOINT_PLUGIN_PATH + ~/.dcc-mcp/powerpoint/plugins，绝不自动
+  下载/安装；执行 = 子进程 + stdin JSON 契约（与 skill 脚本同款约定），
+  stderr 回传诊断。
+- 三个新技能包按现代工具契约发布（execution/job_strategy/affinity/
+  enforce_thread_affinity/annotations/call_examples）：powerpoint-layers、
+  powerpoint-edit（depends: powerpoint-deck）、powerpoint-plugins。
+- powerpoint-deck 契约现代化：全部工具补 call_examples 等字段，SKILL.md
+  升 0.2.0 并挂 references/RECIPES.md（每个语义布局一份可复制的 IR 样例）；
+  powerpoint-review 同步现代化。
+- 边界：edits/layers 与 compiler 一样用 python-pptx（dev 依赖、opt-in 导入，
+  C# 宿主迁移仍按 learnings 既定路线）；插件执行在本沙箱因命名管道限制
+  无法本地冒烟，以 monkeypatch 单测覆盖 subprocess 契约。
+
