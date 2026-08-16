@@ -49,19 +49,22 @@ class DeckCompiler:
 
     # -- helpers -----------------------------------------------------------
 
-    def _set_run_font(self, run, name: str, size_pt: float, color: RGBColor, bold: bool = False) -> None:
+    def _set_run_font(self, run, size_pt: float, color: RGBColor, bold: bool = False) -> None:
+        """Latin and East-Asian typefaces are set explicitly: Segoe UI for
+        latin glyphs, Microsoft YaHei for CJK — no per-character font
+        fallback in PowerPoint."""
         font = run.font
-        font.name = name
+        font.name = FONT_LATIN
         font.size = Pt(size_pt)
         font.bold = bold
         font.color.rgb = color
         rpr = run._r.get_or_add_rPr()
-        for tag in ("a:latin", "a:ea"):
+        for tag, typeface in (("a:latin", FONT_LATIN), ("a:ea", FONT_CJK)):
             existing = rpr.find(qn(tag))
             if existing is None:
                 existing = rpr.makeelement(qn(tag), {})
                 rpr.append(existing)
-            existing.set("typeface", name)
+            existing.set("typeface", typeface)
 
     def _add_textbox(self, slide, left, top, width, height, text: str, *, size: float = 18, color: RGBColor = COLOR_TEXT, bold: bool = False, align=PP_ALIGN.LEFT) -> None:
         box = slide.shapes.add_textbox(left, top, width, height)
@@ -75,7 +78,7 @@ class DeckCompiler:
             para.alignment = align
             run = para.add_run()
             run.text = line
-            self._set_run_font(run, FONT_LATIN, size, color, bold)
+            self._set_run_font(run, size, color, bold)
         return box
 
     def _add_shape(self, slide, shape_type, left, top, width, height, *, fill: RGBColor = COLOR_PANEL, line: RGBColor | None = None, radius: float | None = None):
@@ -102,7 +105,7 @@ class DeckCompiler:
             para.alignment = align
             run = para.add_run()
             run.text = line
-            self._set_run_font(run, FONT_LATIN, size, color, bold)
+            self._set_run_font(run, size, color, bold)
 
     def _background(self, slide, color: RGBColor = COLOR_BG) -> None:
         rect = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT)
@@ -114,6 +117,17 @@ class DeckCompiler:
     def _notes(self, slide, notes: str | None) -> None:
         if notes:
             slide.notes_slide.notes_text_frame.text = notes
+
+    def _page_number(self, slide, number: int, total: int) -> None:
+        box = slide.shapes.add_textbox(SLIDE_WIDTH - Inches(1.6), SLIDE_HEIGHT - Inches(0.5), Inches(1.2), Inches(0.35))
+        box.shadow.inherit = False
+        tf = box.text_frame
+        tf.word_wrap = False
+        para = tf.paragraphs[0]
+        para.alignment = PP_ALIGN.RIGHT
+        run = para.add_run()
+        run.text = f"{number:02d} / {total:02d}"
+        self._set_run_font(run, 10, COLOR_MUTED)
 
     # -- slide dispatch (OCP: one registry, one entry per layout) -----------
 
@@ -130,6 +144,7 @@ class DeckCompiler:
             self._background(slide)
             handler(self, slide, slide_ir)
             self._notes(slide, slide_ir.speaker_notes)
+            self._page_number(slide, index + 1, len(document.slides))
         out = Path(out_path)
         out.parent.mkdir(parents=True, exist_ok=True)
         self.prs.save(str(out))
