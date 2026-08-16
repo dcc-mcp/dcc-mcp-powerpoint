@@ -1,0 +1,22 @@
+{
+  "title": "Daily Review — 2026-08-16",
+  "document_id": "draft:review-2026-08-16",
+  "shots": [
+    {
+      "name": "shot_010_hero",
+      "version": "v12",
+      "artist": "li.ming",
+      "date": "2026-08-15",
+      "image": "",
+      "notes": "灯光已按 v11 反馈调整，请确认高光区。"
+    },
+    {
+      "name": "asset_robot_rig",
+      "version": "v03",
+      "artist": "wang.fang",
+      "date": "2026-08-14",
+      "image": "",
+      "notes": "新增 IK/FK 切换与表情集。"
+    }
+  ]
+}

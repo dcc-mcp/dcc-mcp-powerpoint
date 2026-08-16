@@ -36,6 +36,8 @@ dev = [
     "ruff>=0.8.0",
     "hatchling",
     "build",
+    "python-pptx>=1.0",
+    "pywin32>=306; sys_platform == 'win32'",
 ]
 sidecar = [
     "dcc-mcp-server>=0.17.43",

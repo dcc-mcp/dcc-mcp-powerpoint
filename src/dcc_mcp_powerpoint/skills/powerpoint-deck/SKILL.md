@@ -1,68 +1,62 @@
 ---
 name: powerpoint-deck
-description: "Generate an editable PowerPoint deck from structured content: requirement → outline → template + semantic layouts → Deck IR → Open XML compile → COM finalize → slide previews → structural + visual validation loop → PPTX/PDF/previews."
-dcc: powerpoint
-version: "0.1.0"
-license: "MIT"
-compatibility: "Windows, Office 2019+ / Microsoft 365; runtime from dcc-mcp-office"
-tags: ["powerpoint", "deck", "generate", "template", "validation"]
-capabilities:
-  - powerpoint.deck.generate
-  - powerpoint.slide.compose
-  - powerpoint.slide.render
-  - office.document.validate
+description: >-
+  Generate an editable PowerPoint deck from structured content following the
+  DCC-MCP designed pipeline: Deck IR (office-ir/1.0) → Open XML compile →
+  desktop COM render (PDF + per-slide PNG previews) → structural validation
+  report. Use whenever the agent must produce a PPTX deck from a deck spec.
+license: MIT
+allowed-tools: Bash Read
+metadata:
+  dcc-mcp:
+    dcc: powerpoint
+    layer: domain
+    stage: authoring
+    version: 0.1.0
+    tags:
+      - powerpoint
+      - deck
+      - generate
+      - pptx
+      - pdf
+    search-hint: >-
+      generate deck, make ppt, create slides, powerpoint presentation,
+      export pdf, slide previews, deck validation
+    tools: tools.yaml
 ---
 
-# powerpoint-deck
+# powerpoint-deck (Authoring stage)
 
-Generate a deck from structured content (proposal §15.3/§15.4). Template-first:
-the agent picks semantic layouts, never raw coordinates.
+Deck generation through the designed pipeline (proposal §15.3/§15.4):
+
+1. content planner picks semantic layouts (never raw coordinates)
+2. Deck IR document (contract: dcc-mcp-office-ir presentation schema)
+3. Open XML compiler builds the base PPTX (fast, Office-free)
+4. desktop COM renderer exports PDF + per-slide previews (skipped with an
+   explicit reason when PowerPoint is unavailable — never silent)
+5. structural validation report
 
 ## Input contract
 
-- structured content: per-slide intent + semantic layout + content blocks
-- template: `brand://` URI + pinned version (registry in
-  dcc-mcp-office/templates/)
-- output targets: pptx, pdf, slide-previews
-- validation rules: e.g. no_text_overflow, no_out_of_bounds, no_missing_fonts
+- `input` — path to a Deck IR JSON envelope
+  (`schema_version: office-ir/1.0`, `kind: presentation`)
+- `output_dir` — artifact directory
+- `render` / `previews` — whether to run the COM render step
 
-## Planning steps
+## Scripts
 
-1. Content planner: outline + per-slide intent.
-2. Template & layout resolver: choose `brand://` template and semantic
-   layouts (title_cover, kpi_dashboard, technical_architecture, ...).
-3. Build Deck IR (dcc-mcp-office-ir presentation schema).
-4. Open XML compiler builds the base PPTX (fast, Office-free).
-5. COM finalizer opens and completes native objects / layout / animation.
-6. Render per-slide PNGs; run structural + visual validation.
-7. Fail → generate patch → re-render; pass → publish artifacts.
-
-## Provider choice
-
-Open XML for base construction; desktop COM for finalize/render/export;
-Graph only for OneDrive/SharePoint output targets.
-
-## Safety confirmation
-
-Generation writes only new files → no confirmation. Overwriting an existing
-path follows the checkpoint + confirm policy from dcc-mcp-office-security.
+- `generate_deck` — IR → PPTX (+ PDF/previews + validation report)
+- `validate_deck` — validate a Deck IR / artifacts without generating
+- `render_deck` — render an existing PPTX to PDF + previews via COM
 
 ## Validation rules
 
-Structural: shape bounds, text overflow, missing placeholders, unresolved
-media, occlusion candidates. Visual: per-slide preview review (vision model
-where enabled). Both required — neither replaces the other.
-
-## Failure compensation
-
-Validation failure → patch loop (bounded retries) → if still failing, deliver
-with a marked `needs_human_review` report; never silently downgrade quality.
-
-## Artifact naming
-
-`<workspace>/<deck-slug>-v<version>.{pptx,pdf}` + `previews/<deck-slug>/slide-<n>.png`.
+- envelope contract enforced at load (`deck_ir`): unknown layouts, missing
+  keys and bad types are hard errors with a json-path hint
+- structural checks: schema version, slide count, titles, bullet budgets
+- artifacts must exist and be non-empty
 
 ## Agent-visible summary
 
-Return: what was generated, template used, per-slide validation results,
-preview paths, PDF path, and whether human review is recommended.
+Result context: artifacts (pptx/pdf/previews), backend per step, validation
+checks + warnings, and whether human review is recommended.

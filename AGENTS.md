@@ -11,18 +11,25 @@ office-host launcher. Shared machinery (protocol, IR envelope, C# COM
 runtime, Open XML worker, jobs, security policy) comes from
 `dcc-mcp-office` + `dcc-mcp-core`.
 
-**Current status:** M0 scaffold — package + skill packs + launcher stub.
-No COM wiring yet (that lands in dcc-mcp-office M1).
+**Current status:** M1 capability live — deck pipeline runs end-to-end
+(Deck IR → Open XML compile → COM render → PDF/previews → validation),
+skill scripts executable via the gateway. The shared C# host remains the
+production COM path (dcc-mcp-office M1).
 
 ## Repo Map
 
 | Path | What it is |
 |---|---|
 | `src/dcc_mcp_powerpoint/` | adapter package |
+| `src/dcc_mcp_powerpoint/deck_ir.py` | Deck IR contract (mirrors dcc-mcp-office-ir) |
+| `src/dcc_mcp_powerpoint/compiler.py` | Open XML compiler: semantic-layout registry → PPTX |
+| `src/dcc_mcp_powerpoint/render.py` | COM renderer: `DispatchEx` dedicated instance → PDF + PNGs |
+| `src/dcc_mcp_powerpoint/validate.py` | structural + artifact validation reports |
 | `src/dcc_mcp_powerpoint/sidecar/office_host.py` | launcher: locate/verify/start `office-host.exe --app=powerpoint` |
-| `src/dcc_mcp_powerpoint/skills/powerpoint-deck/SKILL.md` | deck generation workflow (proposal §15.3/§15.4) |
-| `src/dcc_mcp_powerpoint/skills/powerpoint-review/SKILL.md` | `dcc.review-deck-from-renders` (proposal §15.7) |
-| `tests/` | pytest (no Office needed for M0) |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-deck/` | SKILL.md + tools.yaml + scripts (generate/validate/render) |
+| `src/dcc_mcp_powerpoint/skills/powerpoint-review/` | `review_deck_from_renders` skill |
+| `examples/` | framework-intro Deck IR + generated PPTX/PDF/previews |
+| `tests/` | pytest (COM only via subprocess boundary) |
 | `docs/adr/` | adapter-level decisions |
 
 ## Upstream Dependencies

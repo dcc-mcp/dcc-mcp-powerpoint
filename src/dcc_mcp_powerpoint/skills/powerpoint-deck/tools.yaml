@@ -1,0 +1,73 @@
+tools:
+- name: generate_deck
+  execution: sync
+  affinity: main
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Compile a Deck IR JSON (office-ir/1.0 presentation envelope) into an
+    editable 16:9 PPTX via the Open XML backend, then render PDF + per-slide
+    PNG previews through the desktop COM backend when PowerPoint is
+    installed. Returns artifacts, backend info and a structural validation
+    report. Use for any deck creation task.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the Deck IR JSON file
+      output_dir:
+        type: string
+        description: Directory for pptx/pdf/preview artifacts
+      render:
+        type: boolean
+        description: Run the COM render step (PDF + previews) when Office is available
+        default: true
+      previews:
+        type: boolean
+        description: Export per-slide PNG previews during render
+        default: true
+    required: [input, output_dir]
+- name: validate_deck
+  execution: sync
+  affinity: main
+  annotations:
+    read_only_hint: true
+    idempotent_hint: true
+  description: >-
+    Validate a Deck IR JSON (contract + structural checks) or check produced
+    artifacts exist and are non-empty. Returns ok/checks/warnings.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the Deck IR JSON file, or a directory of artifacts
+    required: [input]
+- name: render_deck
+  execution: sync
+  affinity: main
+  annotations:
+    idempotent_hint: true
+  description: >-
+    Render an existing PPTX to PDF and per-slide PNG previews via the desktop
+    COM backend. Reports OFFICE_APP_NOT_INSTALLED explicitly when PowerPoint
+    COM is unavailable.
+  input_schema:
+    type: object
+    properties:
+      input:
+        type: string
+        description: Path to the PPTX file
+      output_dir:
+        type: string
+        description: Directory for pdf/preview artifacts
+      pdf:
+        type: boolean
+        description: Export PDF
+        default: true
+      previews:
+        type: boolean
+        description: Export per-slide PNG previews
+        default: true
+    required: [input, output_dir]

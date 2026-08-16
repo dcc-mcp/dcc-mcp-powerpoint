@@ -1,0 +1,202 @@
+{
+  "schema_version": "office-ir/1.0",
+  "kind": "presentation",
+  "document_id": "draft:dcc-mcp-framework-intro",
+  "metadata": {
+    "title": "DCC-MCP 框架介绍",
+    "author": "DCC-MCP Agent",
+    "language": "zh-CN"
+  },
+  "template": {
+    "uri": "brand://dcc-mcp/framework-intro-v1",
+    "version": "1.0.0"
+  },
+  "resources": [],
+  "document": {
+    "slides": [
+      {
+        "semantic_layout": "title_cover",
+        "title": "DCC-MCP",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "多 DCC 统一智能体网关框架",
+              "让 AI 进入每一个创作工具 · Maya / Blender / Houdini / Photoshop / Unity / Office"
+            ]
+          }
+        ],
+        "speaker_notes": "开场：DCC-MCP 是一个面向数字内容创作工具的统一 MCP 网关生态。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "01 · 框架总览",
+        "speaker_notes": "第一部分：框架是什么、架构长什么样、生态现状。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "什么是 DCC-MCP",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "面向数字内容创作（DCC）工具的统一 MCP 网关生态",
+              "一个 DCC 一个适配器仓库：Maya、Blender、Houdini、Photoshop、Unity、Office…",
+              "统一的能力发现机制：list → search → load_skill → call",
+              "Skills 机制：把稳定流程固化为可复用的技能包"
+            ]
+          }
+        ],
+        "speaker_notes": "四个要点：统一网关、薄适配器、渐进式发现、技能包机制。"
+      },
+      {
+        "semantic_layout": "technical_architecture",
+        "title": "总体架构",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Agent / MCP Client / IDE / CI",
+              "dcc-mcp-gateway（Rust）：路由 · 能力索引 · Job · Artifact · 策略",
+              "Sidecar（RFC #998）：进程生命周期 · PPID 守护 · HostRpcClient",
+              "各 DCC 适配器：Maya commandPort · Blender HTTP · Houdini hrpyc · …",
+              "DCC 应用：Maya / Blender / Houdini / Photoshop / Unity / Office"
+            ]
+          }
+        ],
+        "speaker_notes": "自上而下五层：客户端、Rust 网关、Sidecar 生命周期层、适配器 RPC 层、DCC 应用层。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "能力与 Skills",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "任务级 Capability，不暴露原始对象模型",
+              "渐进式发现：初始上下文不塞满数百个工具",
+              "契约化技能包：SKILL.md + tools.yaml + scripts/<name>.py",
+              "Maya 单仓 25+ 域技能包、198 个结构化操作"
+            ]
+          }
+        ],
+        "speaker_notes": "能力设计哲学：任务级、契约化、渐进式。"
+      },
+      {
+        "semantic_layout": "kpi_dashboard",
+        "title": "生态现状",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "30+ | DCC 适配器仓库",
+              "198 | Maya 结构化操作",
+              "25+ | Maya 域技能包",
+              "5 | Office 新域仓库（office / PPT / Word / Excel / Outlook）",
+              "6 | 执行后端路径（OpenXML / COM / Graph / Office.js / UIA / CUA）",
+              "12 | Office MVP 验收标准"
+            ]
+          }
+        ],
+        "speaker_notes": "数字来自仓库清单与各适配器 AGENTS.md，均为可核实的保守口径。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "02 · 执行模型",
+        "speaker_notes": "第二部分：一次调用如何走完发现、执行、批处理与产物闭环。"
+      },
+      {
+        "semantic_layout": "timeline",
+        "title": "一次调用的旅程",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "list / search — 渐进式能力发现",
+              "load_skill / describe — 契约与确认级别",
+              "call — 任务级 Capability",
+              "Job — 批处理永不占住连接",
+              "Artifact — 结果、预览、审计可追踪"
+            ]
+          }
+        ],
+        "speaker_notes": "五步：发现 → 加载 → 调用 → 作业 → 产物。"
+      },
+      {
+        "semantic_layout": "section_cover",
+        "title": "03 · Office 自动化平台",
+        "speaker_notes": "第三部分：Office 域如何复用同一套控制面，形成双后端执行模型。"
+      },
+      {
+        "semantic_layout": "technical_architecture",
+        "title": "Office 双后端",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Rust Gateway（dcc-mcp-core）：控制面 · Job · Artifact · 安全策略",
+              "office-host.exe（C#）：每应用独立 Sidecar · 单 STA 队列",
+              "POWERPNT / WINWORD / EXCEL（COM 数据面）",
+              "Open XML Worker：批量结构处理（编译器，非渲染器）",
+              "Microsoft Graph / Office.js / UIA-CUA：云与兜底路径"
+            ]
+          }
+        ],
+        "speaker_notes": "本 PPT 即由该流程生成：Deck IR → Open XML 编译 → COM 渲染。"
+      },
+      {
+        "semantic_layout": "comparison",
+        "title": "设计取舍",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "结构化 API 优先",
+              "确定性、可验证、可审计",
+              "UIA/CUA 只做最后兜底",
+              "写操作不得静默降级"
+            ]
+          },
+          {
+            "type": "bullets",
+            "items": [
+              "任务级能力",
+              "不暴露原始 COM 成员",
+              "模板优先于自由坐标",
+              "检查点 + 预览 + 可追踪结果"
+            ]
+          }
+        ],
+        "speaker_notes": "两条主线：执行路径有明确优先级，能力面保持任务级抽象。"
+      },
+      {
+        "semantic_layout": "closing",
+        "title": "Thanks",
+        "content_blocks": [
+          {
+            "type": "text",
+            "paragraphs": [
+              "dcc-mcp · 让 AI 进入每一个创作工具"
+            ]
+          }
+        ],
+        "speaker_notes": "收尾：欢迎共建适配器与技能包。"
+      }
+    ],
+    "export_policy": {
+      "include_speaker_notes": false,
+      "pdf": true,
+      "slide_previews": true
+    }
+  },
+  "validation": [
+    "no_text_overflow",
+    "no_out_of_bounds",
+    "no_missing_fonts"
+  ],
+  "outputs": [
+    "pptx",
+    "pdf",
+    "slide-previews"
+  ]
+}
