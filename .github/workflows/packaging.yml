@@ -1,0 +1,54 @@
+name: Packaging
+
+on:
+  pull_request:
+    paths:
+      - "pyoxidizer.bzl"
+      - "tools/**"
+      - "src/dcc_mcp_powerpoint/_standalone_entry.py"
+      - "src/dcc_mcp_powerpoint/host_client.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout dcc-mcp-office (host source)
+        uses: actions/checkout@v4
+        with:
+          repository: dcc-mcp/dcc-mcp-office
+          path: _office
+
+      - name: Install PyOxidizer
+        run: python -m pip install pyoxidizer
+
+      - name: Build standalone (host publish + pyoxidizer)
+        run: python tools/build_binary.py --host-source _office
+
+      - name: Smoke test — version + compile via bundled host
+        shell: pwsh
+        run: |
+          cd dist/binary
+          .dcc-mcp-powerpoint.exe --version
+          .dcc-mcp-powerpoint.exe compile --input ....examplesdcc_mcp_framework_intro.json --output "$env:RUNNER_TEMPsmoke.pptx"
+          if (-not (Test-Path "$env:RUNNER_TEMPsmoke.pptx")) { Write-Error "compile produced no output"; exit 1 }
+          .dcc-mcp-powerpoint.exe inspect --input "$env:RUNNER_TEMPsmoke.pptx"
+
+      - name: Upload standalone artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcc-mcp-powerpoint-windows-x64
+          path: dist/binary

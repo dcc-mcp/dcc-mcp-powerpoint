@@ -9,11 +9,12 @@ M1 capability surface (Open XML backend live, COM backend via render_deck):
 - compiler: Deck IR -> PPTX (Open XML implementation)
 - render: PPTX -> PDF + slide previews (desktop COM implementation)
 - validate: structural validation reports
-- analyze: self-implemented issue analyzer (path addressing, three buckets,
-  real font-metric overflow + WCAG contrast)
+- analyze (opt-in module): self-implemented issue analyzer — imported as
+  dcc_mcp_powerpoint.analyze, never at package import time (its reader uses
+  python-pptx, a dev/test-only dependency)
+- host_client (opt-in module): stdlib-only JSON-RPC client for the C# host
 """
 
-from .analyze import analyze_deck
 from .deck_ir import DeckEnvelope, IrValidationError, load_deck_ir
 from .render import office_available, render_deck
 from .validate import validate_artifacts, validate_envelope
@@ -24,7 +25,6 @@ __all__ = [
     "DeckEnvelope",
     "IrValidationError",
     "__version__",
-    "analyze_deck",
     "load_deck_ir",
     "office_available",
     "render_deck",

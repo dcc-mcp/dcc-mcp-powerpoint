@@ -131,6 +131,39 @@
         "speaker_notes": "四张图来自官网 showcase 页的公开案例，均可从 dcc-mcp.github.io/showcase 访问。"
       },
       {
+        "semantic_layout": "technical_architecture",
+        "title": "本项目：dcc-mcp-PowerPoint 管线",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "Deck IR 契约（office-ir/1.0，镜像 dcc-mcp-office-ir）",
+              "dcc-office-host（C#，零 NuGet）：Open XML 编译 · 路径寻址检查",
+              "桌面 COM 渲染：PDF + 逐页 PNG（DispatchEx 专用实例）",
+              "自研 issues 分析器：真实字体度量溢出 + WCAG 对比度",
+              "像素级视觉 QA：覆盖率 + 边缘出血（背景自适应）"
+            ]
+          }
+        ],
+        "speaker_notes": "本 Deck 即由这条管线生成：IR → C# 宿主 → COM 渲染。"
+      },
+      {
+        "semantic_layout": "bullets",
+        "title": "质量与分发",
+        "content_blocks": [
+          {
+            "type": "bullets",
+            "items": [
+              "官方 dcc-mcp-cli lint：4 个技能包 0 错误 0 警告",
+              "pytest 35 用例 · ruff 0 错误 · CI 全绿后 squash 合并",
+              "运行时零第三方依赖：Python 只用 stdlib，重型接口走 C# 宿主",
+              "PyOxidizer 独立可执行文件分发（photoshop 同款模式）"
+            ]
+          }
+        ],
+        "speaker_notes": "质量门禁与零依赖分发是项目的两条硬约束。"
+      },
+      {
         "semantic_layout": "section_cover",
         "title": "02 · 执行模型",
         "speaker_notes": "第二部分：一次调用如何走完发现、执行、批处理与产物闭环。"
