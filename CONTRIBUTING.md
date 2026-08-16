@@ -21,4 +21,5 @@ Gates:
 ruff check src tests
 pytest
 python -m py_compile src/dcc_mcp_powerpoint
+dcc-mcp-cli lint src/dcc_mcp_powerpoint/skills --warnings-as-errors --non-interactive
 ```

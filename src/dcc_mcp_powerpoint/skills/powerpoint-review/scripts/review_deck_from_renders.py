@@ -10,30 +10,23 @@ import json
 import sys
 from pathlib import Path
 
-_THIS = Path(__file__).resolve()
-try:
-    from dcc_mcp_powerpoint.compiler import compile_deck
-    from dcc_mcp_powerpoint.deck_ir import (
-        DeckEnvelope,
-        Metadata,
-        PresentationIr,
-        Slide,
-        artifact_stem,
-    )
-    from dcc_mcp_powerpoint.render import render_deck
-    from dcc_mcp_powerpoint.validate import validate_artifacts
-except ImportError:
-    sys.path.insert(0, str(_THIS.parents[4]))
-    from dcc_mcp_powerpoint.compiler import compile_deck
-    from dcc_mcp_powerpoint.deck_ir import (
-        DeckEnvelope,
-        Metadata,
-        PresentationIr,
-        Slide,
-        artifact_stem,
-    )
-    from dcc_mcp_powerpoint.render import render_deck
-    from dcc_mcp_powerpoint.validate import validate_artifacts
+from dcc_mcp_powerpoint.compiler import compile_deck
+from dcc_mcp_powerpoint.deck_ir import (
+    DeckEnvelope,
+    Metadata,
+    PresentationIr,
+    Slide,
+    artifact_stem,
+)
+from dcc_mcp_powerpoint.render import render_deck
+from dcc_mcp_powerpoint.validate import validate_artifacts
+
+
+def _force_utf8_stdio() -> None:
+    """Deterministic output contract: stdout/stderr are always UTF-8."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 def _load_manifest(path: str | Path) -> dict:
@@ -126,18 +119,6 @@ def run(params: dict) -> None:
             ensure_ascii=False,
         )
     )
-
-
-def _force_utf8_stdio() -> None:
-    """Deterministic output contract: stdout/stderr are always UTF-8.
-
-    On Windows, a piped subprocess stdout defaults to the ANSI codepage
-    (charmap) and fails on CJK text. The gateway reads JSON from stdout, so
-    the encoding is part of the script contract.
-    """
-    for stream in (sys.stdout, sys.stderr):
-        if hasattr(stream, "reconfigure"):
-            stream.reconfigure(encoding="utf-8", errors="replace")
 
 
 def main() -> None:
