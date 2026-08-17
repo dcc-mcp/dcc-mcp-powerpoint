@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.0...v0.2.1) (2026-08-17)
+
+
+### Features
+
+* integrate dcc-office-host v0.2.0 capability surface ([#15](https://github.com/dcc-mcp/dcc-mcp-powerpoint/issues/15)) ([c2d06d8](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/c2d06d8ec9976f02d05eabfe1751f6a3f1365b45))
+
+
+### Bug Fixes
+
+* correct workflow expression syntax (literal backslashes broke the token reference) ([77adc36](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/77adc3631e41d079a796ea9ec368c58eda6e2f6d))
+
 ## [0.2.0] - 2026-08-16
 
 First release of the PowerPoint adapter over the dcc-mcp-office core.
