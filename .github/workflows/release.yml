@@ -1,0 +1,89 @@
+name: Release
+
+# Automated releases via release-please (conventional commits), mirroring
+# dcc-mcp-office's release flow.
+#
+# Every push to main runs release-please, which keeps a release PR up to date.
+# When that PR is merged, release-please creates the GitHub release and tag;
+# this workflow then rebuilds the standalone binary and attaches it, so
+# downstream consumers always have a versioned, CI-verified
+# dcc-mcp-powerpoint.exe to consume.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: \${{ steps.release.outputs.release_created }}
+      tag_name: \${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # A PAT (user-owned) is required: PRs opened with the default
+          # GITHUB_TOKEN do not trigger pull_request workflows, so CI would
+          # never run on release PRs.
+          token: \${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish-release-assets:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Pinned host-source ref: the dependency build (dcc-office-host) is
+      # produced by dcc-mcp-office's Release workflow; we build it here from
+      # the pinned source so packaging stays reproducible. Bump this ref when
+      # the office dependency changes; switch to downloading the published
+      # artifact once dcc-mcp-office cuts releases.
+      - name: Checkout dcc-mcp-office (host source)
+        uses: actions/checkout@v4
+        with:
+          repository: dcc-mcp/dcc-mcp-office
+          ref: 26b0968282c08d9cae4ca84f26b7ad62f1bfdc72
+          path: _office
+
+      - name: Install PyOxidizer
+        run: python -m pip install pyoxidizer
+
+      - name: Build standalone (host publish + pyoxidizer)
+        run: python tools/build_binary.py --host-source _office
+
+      - name: Smoke test — version + compile via bundled host
+        shell: pwsh
+        run: |
+          Get-ChildItem dist/binary | Select-Object -First 5 Name, Length
+          $exe = Join-Path $env:GITHUB_WORKSPACE "dist/binary/dcc-mcp-powerpoint.exe"
+          if (-not (Test-Path $exe)) { Write-Error "standalone exe missing: $exe"; exit 1 }
+          & $exe --version
+          $smoke = Join-Path $env:RUNNER_TEMP "smoke.pptx"
+          & $exe compile --input examples/dcc_mcp_framework_intro.json --output $smoke
+          if (-not (Test-Path $smoke)) { Write-Error "compile produced no output"; exit 1 }
+          & $exe inspect --input $smoke
+
+      - name: Upload standalone artifacts to the GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Get-ChildItem dist/binary -Recurse -File | ForEach-Object {
+            gh release upload "\${{ needs.release-please.outputs.tag_name }}" $_.FullName --clobber --repo dcc-mcp/dcc-mcp-powerpoint
+          }
