@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.1...v0.2.2) (2026-08-17)
+
+
+### Bug Fixes
+
+* upload only the two standalone artifacts (exe + bundled host), not the whole dist tree ([a946a24](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/a946a24f9891b5eb3bc5eb176dc14f68d687ed0d))
+
 ## [0.2.1](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.0...v0.2.1) (2026-08-17)
 
 

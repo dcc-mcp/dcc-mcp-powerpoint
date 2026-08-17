@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dcc-mcp-powerpoint"
-version = "0.2.1"
+version = "0.2.2"
 description = "PowerPoint adapter for the DCC-MCP ecosystem — deck generation, slide composition and review decks over the dcc-mcp-office runtime"
 authors = [{ name = "Long Hao", email = "hal.long@outlook.com" }]
 readme = "README.md"
