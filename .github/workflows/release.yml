@@ -22,8 +22,8 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     outputs:
-      release_created: \${{ steps.release.outputs.release_created }}
-      tag_name: \${{ steps.release.outputs.tag_name }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -31,7 +31,7 @@ jobs:
           # A PAT (user-owned) is required: PRs opened with the default
           # GITHUB_TOKEN do not trigger pull_request workflows, so CI would
           # never run on release PRs.
-          token: \${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -83,8 +83,8 @@ jobs:
       - name: Upload standalone artifacts to the GitHub release
         shell: pwsh
         env:
-          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Get-ChildItem dist/binary -Recurse -File | ForEach-Object {
-            gh release upload "\${{ needs.release-please.outputs.tag_name }}" $_.FullName --clobber --repo dcc-mcp/dcc-mcp-powerpoint
+            gh release upload "${{ needs.release-please.outputs.tag_name }}" $_.FullName --clobber --repo dcc-mcp/dcc-mcp-powerpoint
           }
