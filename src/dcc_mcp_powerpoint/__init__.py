@@ -26,7 +26,7 @@ from .deck_ir import DeckEnvelope, IrValidationError, load_deck_ir
 from .render import office_available, render_deck
 from .validate import validate_artifacts, validate_envelope
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "DeckEnvelope",
