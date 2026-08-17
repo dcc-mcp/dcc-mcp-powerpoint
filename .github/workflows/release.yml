@@ -13,6 +13,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag to attach assets to (optional; used to re-attach after a failed publish)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -37,7 +42,7 @@ jobs:
 
   publish-release-assets:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +89,15 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Tag from the release job, or the manual dispatch input when
+          # re-attaching assets to an existing release.
+          TARGET_TAG: ${{ needs.release-please.outputs.tag_name || github.event.inputs.tag_name }}
         run: |
-          Get-ChildItem dist/binary -Recurse -File | ForEach-Object {
-            gh release upload "${{ needs.release-please.outputs.tag_name }}" $_.FullName --clobber --repo dcc-mcp/dcc-mcp-powerpoint
+          $tag = $env:TARGET_TAG
+          if (-not $tag) { Write-Error "no target tag"; exit 1 }
+          $exe = "dist/binary/dcc-mcp-powerpoint.exe"
+          $host = "dist/binary/lib/dcc-office-host.exe"
+          gh release upload $tag $exe --clobber --repo dcc-mcp/dcc-mcp-powerpoint
+          if (Test-Path $host) {
+            gh release upload $tag $host --clobber --repo dcc-mcp/dcc-mcp-powerpoint
           }
