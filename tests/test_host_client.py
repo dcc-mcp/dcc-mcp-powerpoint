@@ -74,6 +74,31 @@ def test_rpc_round_trip_against_fake_host(monkeypatch, tmp_path: Path) -> None:
     assert result["result"]["protocol_version"] == "office-rpc/1"
 
 
+def test_rpc_selects_response_from_host_notifications(monkeypatch, tmp_path: Path) -> None:
+    """The stdio host emits one NDJSON response plus event notifications."""
+    _patch_host(monkeypatch, tmp_path)
+
+    class _Proc:
+        returncode = 0
+
+    def _run(argv, stdin, stdout, stderr, timeout, check):
+        del argv, stdin, stderr, timeout, check
+        response = {"jsonrpc": "2.0", "id": "req", "result": {"ok": True}}
+        notification = {
+            "jsonrpc": "2.0",
+            "method": "office.command.audit",
+            "params": {"operation_id": "op-1"},
+        }
+        stdout.write(json.dumps(response) + _NL + json.dumps(notification) + _NL)
+        return _Proc()
+
+    monkeypatch.setattr("dcc_mcp_powerpoint.host_client.subprocess.run", _run)
+
+    result = rpc("office.command.execute", {"capability": "deck.compile"})
+
+    assert result == {"success": True, "backend": "office_host", "result": {"ok": True}}
+
+
 def test_rpc_surfaces_host_errors(monkeypatch, tmp_path: Path) -> None:
     fake = tmp_path / "host.cmd"
     fake.write_text("@echo off" + _NL + "exit /b 3" + _NL, encoding="utf-8")

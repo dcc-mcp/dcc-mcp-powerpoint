@@ -70,6 +70,30 @@ def _abs(path: str | Path) -> str:
     return str(Path(path).resolve())
 
 
+def _matching_response(stdout: str, request_id: str) -> dict[str, Any]:
+    """Return the JSON-RPC response from the host's NDJSON output.
+
+    Current Office hosts write the command response followed by zero or more
+    event notifications.  Selecting by request id keeps the one-shot client
+    compatible with both the original single-response host and that stream.
+    """
+    responses: list[dict[str, Any]] = []
+    for line_number, line in enumerate(stdout.splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"invalid JSON on host output line {line_number}: {exc}") from exc
+        if isinstance(payload, dict) and payload.get("id") == request_id:
+            responses.append(payload)
+    if not responses:
+        raise ValueError(f"host output did not contain response id {request_id!r}")
+    if len(responses) != 1:
+        raise ValueError(f"host output contained {len(responses)} responses for id {request_id!r}")
+    return responses[0]
+
+
 def rpc(method: str, params: dict[str, Any], *, app: str = "powerpoint") -> dict[str, Any]:
     """One JSON-RPC exchange with the host over stdin/stdout.
 
@@ -111,9 +135,9 @@ def rpc(method: str, params: dict[str, Any], *, app: str = "powerpoint") -> dict
     if proc.returncode != 0:
         return {"success": False, "backend": "office_host", "reason": stderr.strip() or "host exited non-zero"}
     try:
-        payload = json.loads(stdout)
-    except json.JSONDecodeError as exc:
-        return {"success": False, "backend": "office_host", "reason": f"host output not JSON: {exc}"}
+        payload = _matching_response(stdout, "req")
+    except ValueError as exc:
+        return {"success": False, "backend": "office_host", "reason": f"invalid host output: {exc}"}
     result = payload.get("result")
     if result is None:
         return {"success": False, "backend": "office_host", "reason": str(payload.get("error", "empty result"))}
