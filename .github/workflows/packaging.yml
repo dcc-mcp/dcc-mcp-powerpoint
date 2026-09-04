@@ -52,7 +52,7 @@ jobs:
           $exe = Join-Path $env:GITHUB_WORKSPACE "dist/binary/dcc-mcp-powerpoint.exe"
           if (-not (Test-Path $exe)) { Write-Error "standalone exe missing: $exe"; exit 1 }
           & $exe --version
-          $smoke = Join-Path $env:RUNNER_TEMP "smoke.pptx"
+          $smoke = Join-Path $env:GITHUB_WORKSPACE "dist/smoke.pptx"
           & $exe compile --input examples/dcc_mcp_framework_intro.json --output $smoke
           if (-not (Test-Path $smoke)) { Write-Error "compile produced no output"; exit 1 }
           & $exe inspect --input $smoke
