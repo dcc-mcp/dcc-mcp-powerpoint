@@ -1,6 +1,9 @@
 """Package-level smoke tests (no Office installation required)."""
 
+import pytest
+
 from dcc_mcp_powerpoint import __version__
+from dcc_mcp_powerpoint._standalone_entry import main
 from dcc_mcp_powerpoint.sidecar.office_host import APP_NAME, HOST_EXE, OfficeHostConfig
 
 
@@ -8,6 +11,13 @@ def test_version_is_pep440() -> None:
     parts = __version__.split(".")
     assert len(parts) == 3
     assert all(p.isdigit() for p in parts)
+
+
+def test_cli_version_matches_package_version(capsys) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["dcc-mcp-powerpoint", "--version"])
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"dcc-mcp-powerpoint {__version__}"
 
 
 def test_office_host_defaults_to_powerpoint() -> None:

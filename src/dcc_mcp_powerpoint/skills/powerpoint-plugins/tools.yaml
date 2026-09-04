@@ -2,7 +2,7 @@ tools:
 - name: plugin_list
   execution: sync
   affinity: any
-  enforce_thread_affinity: true
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     read_only_hint: true
@@ -22,7 +22,7 @@ tools:
 - name: plugin_run
   execution: sync
   affinity: any
-  enforce_thread_affinity: true
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     idempotent_hint: true
@@ -42,7 +42,8 @@ tools:
         description: Plugin parameters (validated against its input_schema by the plugin)
       context:
         type: object
-        description: Execution context (e.g. {"pptx": "deck.pptx"})
+        description: >-
+          Execution context, for example {"pptx": "deck.pptx"}.
       pptx:
         type: string
         description: Shortcut for context.pptx — the deck the plugin works on

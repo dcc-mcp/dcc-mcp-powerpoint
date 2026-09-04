@@ -1,8 +1,8 @@
 tools:
 - name: generate_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     idempotent_hint: true
@@ -39,8 +39,8 @@ tools:
     note: Compile the PPTX only, skip the COM render step
 - name: validate_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     read_only_hint: true
@@ -62,8 +62,8 @@ tools:
     note: Check that produced artifacts exist and are non-empty
 - name: analyze_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     read_only_hint: true
@@ -85,8 +85,8 @@ tools:
     note: Analyze a deck before review or after a patch
 - name: inventory_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     read_only_hint: true
@@ -107,8 +107,8 @@ tools:
     note: Inventory a deck before editing or repairing it
 - name: render_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     idempotent_hint: true

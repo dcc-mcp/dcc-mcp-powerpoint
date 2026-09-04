@@ -1,8 +1,8 @@
 tools:
 - name: slide_tree
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     read_only_hint: true
@@ -28,8 +28,8 @@ tools:
     note: Inspect one slide only
 - name: edit_deck
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     idempotent_hint: true

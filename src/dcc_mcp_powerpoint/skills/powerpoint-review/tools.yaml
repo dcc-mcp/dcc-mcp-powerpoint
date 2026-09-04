@@ -1,8 +1,8 @@
 tools:
 - name: review_deck_from_renders
   execution: sync
-  affinity: main
-  enforce_thread_affinity: true
+  affinity: any
+  enforce_thread_affinity: false
   job_strategy: monolithic
   annotations:
     idempotent_hint: true
