@@ -18,8 +18,10 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from . import __version__
 from .host_client import compile_deck, inspect_deck
 from .render import render_deck
+from .server_launcher import ServeConfig, serve
 from .validate import validate_artifacts
 
 _PYTHON_SCRIPT_SUFFIXES = frozenset({".py", ".pyw"})
@@ -66,6 +68,17 @@ def _cmd_render(args: argparse.Namespace) -> int:
     return 0 if report.get("success") else 1
 
 
+def _cmd_serve(args: argparse.Namespace) -> int:
+    return serve(
+        ServeConfig(
+            server=args.server,
+            mcp_port=args.mcp_port,
+            registry_dir=args.registry_dir,
+            pid_file=args.pid_file,
+        )
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     resolved_argv = list(sys.argv if argv is None else argv)
     os.environ.setdefault("DCC_MCP_PYTHON_EXECUTABLE", sys.executable)
@@ -91,7 +104,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     r.add_argument("--no-pdf", action="store_true")
     r.add_argument("--no-previews", action="store_true")
     r.set_defaults(func=_cmd_render)
-    parser.add_argument("--version", action="version", version="dcc-mcp-powerpoint 0.1.0")
+    s = sub.add_parser("serve", help="start and register the PowerPoint MCP adapter")
+    s.add_argument("--server", help="absolute path to dcc-mcp-server")
+    s.add_argument("--mcp-port", type=int, default=0, help="MCP port; 0 lets the OS choose")
+    s.add_argument("--registry-dir", help="shared DCC-MCP FileRegistry directory")
+    s.add_argument("--pid-file", help="write the server PID to this file")
+    s.set_defaults(func=_cmd_serve)
+    parser.add_argument("--version", action="version", version=f"dcc-mcp-powerpoint {__version__}")
     args = parser.parse_args(resolved_argv[1:])
     raise SystemExit(args.func(args))
 

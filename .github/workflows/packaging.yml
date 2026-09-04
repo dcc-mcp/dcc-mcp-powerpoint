@@ -6,6 +6,7 @@ on:
       - "pyoxidizer.bzl"
       - "tools/**"
       - "src/dcc_mcp_powerpoint/_standalone_entry.py"
+      - "src/dcc_mcp_powerpoint/server_launcher.py"
       - "src/dcc_mcp_powerpoint/host_client.py"
       - "pyproject.toml"
   workflow_dispatch:
@@ -35,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dcc-mcp/dcc-mcp-office
-          ref: c5d6694330e3b795af3eb9d03c44930b93f011ca
+          ref: b1004bfb61d4af727d5f5bdd8bc1b4e10c88c7dd
           path: _office
 
       - name: Install PyOxidizer
@@ -51,9 +52,10 @@ jobs:
           $exe = Join-Path $env:GITHUB_WORKSPACE "dist/binary/dcc-mcp-powerpoint.exe"
           if (-not (Test-Path $exe)) { Write-Error "standalone exe missing: $exe"; exit 1 }
           & $exe --version
-          & $exe compile --input examples/dcc_mcp_framework_intro.json --output "$env:RUNNER_TEMPsmoke.pptx"
-          if (-not (Test-Path "$env:RUNNER_TEMPsmoke.pptx")) { Write-Error "compile produced no output"; exit 1 }
-          & $exe inspect --input "$env:RUNNER_TEMPsmoke.pptx"
+          $smoke = Join-Path $env:RUNNER_TEMP "smoke.pptx"
+          & $exe compile --input examples/dcc_mcp_framework_intro.json --output $smoke
+          if (-not (Test-Path $smoke)) { Write-Error "compile produced no output"; exit 1 }
+          & $exe inspect --input $smoke
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v4

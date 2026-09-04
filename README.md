@@ -64,8 +64,9 @@ artifact map.
 
 ## Agent usage (via dcc-mcp-cli / gateway)
 
-1. Register the skill packs with the gateway:
-   `set DCC_MCP_POWERPOINT_SKILL_PATHS=<repo>\src\dcc_mcp_powerpoint\skills`
+1. Start the registered adapter (the launcher binds the bundled skill packs
+   and script runtime to the official `dcc-mcp-server`):
+   `dcc-mcp-powerpoint serve`
 2. Run a skill script directly (gateway `execute_script` contract —
    stdin JSON or CLI flags):
    ```bash
