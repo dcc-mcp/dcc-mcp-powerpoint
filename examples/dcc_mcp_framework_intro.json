@@ -8,7 +8,7 @@
     "language": "zh-CN"
   },
   "template": {
-    "uri": "brand://dcc-mcp/framework-intro-v1",
+    "uri": "brand://dcc-mcp/default",
     "version": "1.0.0"
   },
   "resources": [],
