@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.3](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.2...v0.2.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* keep packaging smoke inside workspace ([1167952](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/11679521ac1be018ac5a272335d33b5814302014))
+* keep release smoke inside workspace ([64dce7d](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/64dce7d4d3e7f0236bf70a0a6843e26f98ab8a88))
+* parse Office host notification frames ([f4bf726](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/f4bf7268fbf098a8953ba2b9b73d3254f6a46847))
+* restore PowerPoint adapter registration ([348a902](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/348a902a38c683e36a8b63b5a8ae7f002ad79f15))
+* use a materialized Office brand template ([388499c](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/388499ccd06c8858f927fdf0191df4070c8c4821))
+
 ## [0.2.2](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.1...v0.2.2) (2026-08-17)
 
 
