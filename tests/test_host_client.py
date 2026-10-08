@@ -81,7 +81,7 @@ def test_rpc_selects_response_from_host_notifications(monkeypatch, tmp_path: Pat
     class _Proc:
         returncode = 0
 
-    def _run(argv, stdin, stdout, stderr, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check, creationflags):
         del argv, stdin, stderr, timeout, check
         response = {"jsonrpc": "2.0", "id": "req", "result": {"ok": True}}
         notification = {
@@ -114,7 +114,7 @@ def _fake_run(captured: dict):
     class _Proc:
         returncode = 0
 
-    def _run(argv, stdin, stdout, stderr, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check, creationflags):
         captured["argv"] = argv
         captured["request"] = json.loads(stdin.read())
         stdout.write(json.dumps({"jsonrpc": "2.0", "id": "req", "result": {"ok": True}}))
