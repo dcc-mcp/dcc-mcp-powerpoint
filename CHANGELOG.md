@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.4](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.3...v0.2.4) (2026-10-09)
+
+
+### Bug Fixes
+
+* hide Windows service and helper consoles ([#23](https://github.com/dcc-mcp/dcc-mcp-powerpoint/issues/23)) ([ff6fb5c](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/ff6fb5ca773837d437a7f8f6e83a4c573222ca89))
+
+
+### Documentation
+
+* **readme:** add the generated DCC-MCP host matrix pointer ([cb1b650](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/cb1b6502f6d9fb92a039929545d6cb881a740ca0))
+* **readme:** refresh host matrix pointer to current catalog count ([a6ff1eb](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/a6ff1eb108d449a73b24ea1e5d119c72104c0524))
+
 ## [0.2.3](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.2...v0.2.3) (2026-09-25)
 
 
