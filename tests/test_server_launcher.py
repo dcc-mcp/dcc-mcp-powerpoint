@@ -25,9 +25,10 @@ def test_serve_forwards_the_current_python_runtime(monkeypatch, tmp_path: Path) 
     server.touch()
     observed = {}
 
-    def fake_call(command, *, env):
+    def fake_call(command, *, env, creationflags):
         observed["command"] = command
         observed["env"] = env
+        observed["creationflags"] = creationflags
         return 7
 
     monkeypatch.setattr(server_launcher.subprocess, "call", fake_call)
@@ -35,6 +36,7 @@ def test_serve_forwards_the_current_python_runtime(monkeypatch, tmp_path: Path) 
     result = server_launcher.serve(server_launcher.ServeConfig(server=str(server)))
 
     assert result == 7
+    assert observed["creationflags"] == getattr(server_launcher.subprocess, "CREATE_NO_WINDOW", 0)
     assert observed["env"][server_launcher.PYTHON_EXECUTABLE_ENV] == sys.executable
 
 

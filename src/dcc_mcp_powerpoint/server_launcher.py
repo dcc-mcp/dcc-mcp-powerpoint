@@ -84,4 +84,6 @@ def serve(config: ServeConfig) -> int:
     """Run until the registered server exits, forwarding its exit status."""
     environment = os.environ.copy()
     environment[PYTHON_EXECUTABLE_ENV] = sys.executable
-    return subprocess.call(config.command(), env=environment)
+    return subprocess.call(
+        config.command(), env=environment, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    )

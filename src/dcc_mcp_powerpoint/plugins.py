@@ -224,6 +224,7 @@ def run_plugin(
                     stderr=stderr_file,
                     timeout=timeout_ms / 1000.0,
                     check=False,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
         except subprocess.TimeoutExpired as exc:
             return {"success": False, "plugin": entry["name"], "reason": f"plugin timed out after {timeout_ms} ms", "stderr": str(exc)}

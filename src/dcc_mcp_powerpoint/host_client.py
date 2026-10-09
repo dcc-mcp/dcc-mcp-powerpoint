@@ -125,6 +125,7 @@ def rpc(method: str, params: dict[str, Any], *, app: str = "powerpoint") -> dict
                     stderr=stderr_file,
                     timeout=300,
                     check=False,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
         except subprocess.TimeoutExpired as exc:
             return {"success": False, "backend": "office_host", "reason": f"host timed out: {exc}"}

@@ -127,7 +127,7 @@ class _FakeProc:
 
 
 def _fake_run(captured: dict):
-    def _run(argv, stdin, stdout, stderr, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check, creationflags):
         captured["argv"] = argv
         captured["payload"] = json.loads(stdin.read())
         captured["timeout"] = timeout
@@ -160,7 +160,7 @@ def test_run_plugin_timeout_cap(monkeypatch: pytest.MonkeyPatch, tmp_root: Path)
 def test_run_plugin_nonzero_exit(monkeypatch: pytest.MonkeyPatch, tmp_root: Path) -> None:
     directory = _make_plugin(tmp_root, "crash")
 
-    def _run(argv, stdin, stdout, stderr, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check, creationflags):
         stdin.read()
         stderr.write("boom")
         return _FakeProc(1)
@@ -175,7 +175,7 @@ def test_run_plugin_nonzero_exit(monkeypatch: pytest.MonkeyPatch, tmp_root: Path
 def test_run_plugin_non_json_stdout(monkeypatch: pytest.MonkeyPatch, tmp_root: Path) -> None:
     directory = _make_plugin(tmp_root, "talkative")
 
-    def _run(argv, stdin, stdout, stderr, timeout, check):
+    def _run(argv, stdin, stdout, stderr, timeout, check, creationflags):
         stdin.read()
         stdout.write("not json at all")
         return _FakeProc(0)
