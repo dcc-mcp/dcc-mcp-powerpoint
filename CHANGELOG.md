@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.5](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.4...v0.2.5) (2026-11-24)
+
+
+### Documentation
+
+* refresh the generated DCC-MCP host matrix pointer ([b66f148](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/b66f148620f140886b71565a9c0f35173362e295))
+* refresh the generated DCC-MCP host matrix pointer ([2d4c580](https://github.com/dcc-mcp/dcc-mcp-powerpoint/commit/2d4c58046f9825cdd6d13902258bc4a012487b14))
+
 ## [0.2.4](https://github.com/dcc-mcp/dcc-mcp-powerpoint/compare/v0.2.3...v0.2.4) (2026-10-09)
 
 
